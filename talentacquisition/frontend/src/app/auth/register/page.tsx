@@ -9,12 +9,13 @@ import {
     Divider,
     Link,
     Checkbox,
-    Select,
-    SelectItem,
     Chip,
 } from "@heroui/react";
 import { Eye, EyeOff, User, Mail, Lock, Phone } from 'lucide-react';
 import { RegistrationErrorSchema, RegistrationFormSchema } from '../../../../types/types';
+import bcrypt from 'bcrypt'
+import { authClient } from '@/lib/auth-client';
+import { redirect } from 'next/navigation';
 
 const RegistrationPage = () => {
     const [formData, setFormData] = useState<RegistrationFormSchema>({
@@ -24,7 +25,6 @@ const RegistrationPage = () => {
         phone: '',
         password: '',
         confirmPassword: '',
-        country: '',
         agreeToTerms: false,
         subscribeNewsletter: false
     });
@@ -53,7 +53,6 @@ const RegistrationPage = () => {
         if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
         }
-        if (!formData.country) newErrors.country = 'Please select your country';
         if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
 
         setErrors(newErrors);
@@ -65,10 +64,25 @@ const RegistrationPage = () => {
 
         setIsLoading(true);
         // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsLoading(false);
+        // const hashedPassword = await bcrypt.hash(formData.password, 10)
+        const name = `${formData.firstName} ${formData.lastName}`
+        const { data, error } = await authClient.signUp.email(
+            { email: formData.email, password: formData.password, name: name, callbackURL: "/" },
+            {
+                onRequest: (ctx) => {
 
-        alert('Registration successful! (This is a demo)');
+                },
+                onSuccess: (ctx) => {
+                    setIsLoading(false);
+                    redirect('/')
+                    alert('Registration successful! (This is a demo)');
+                },
+                onError: (ctx) => {
+                    alert(ctx.error.message)
+                }
+            }
+        )
+
     };
 
     const handleInputChange = (field: keyof RegistrationErrorSchema, value: string | boolean) => {

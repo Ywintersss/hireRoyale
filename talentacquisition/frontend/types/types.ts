@@ -5,7 +5,6 @@ export interface RegistrationFormSchema {
     phone: string,
     password: string,
     confirmPassword: string,
-    country: string,
     agreeToTerms: boolean,
     subscribeNewsletter: boolean
 }
