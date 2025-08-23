@@ -4,42 +4,50 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "sqlite" // or "postgresql" / "mysql" in prod
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id
+  id            String      @id @default(cuid())
   name          String
-  email         String
-  emailVerified Boolean
+  email         String      @unique
+  emailVerified Boolean     @default(false)
   image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
+  contact       String?
+  password      String?     // for email/password auth (via Account usually)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // relations
   sessions      Session[]
   accounts      Account[]
+  roleId        String?
+  role          Role?       @relation(fields: [roleId], references: [id])
+  resumeId      String?     @unique
+  resume        Resume?     @relation(fields: [resumeId], references: [id])
+  eventsCreated Event[]     @relation("UserEventsCreated")
+  eventsJoined  UserEvent[] @relation("UserEventsJoined")
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(cuid())
   expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   ipAddress String?
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
   accountId             String
   providerId            String
   userId                String
@@ -51,19 +59,91 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@map("account")
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+// ---------- ERD MERGE PART ----------
+
+model Resume {
+  id         String  @id @default(cuid())
+  resumeUrl  String
+  parsedData1 String?
+  parsedData2 String?
+  parsedData3 String?
+
+  // one-to-one with User
+  user User?
+}
+
+model Role {
+  id          String         @id @default(cuid())
+  name        String        @unique
+  permissions RolePermission[]
+  users       User[]
+
+  @@map("role")
+}
+
+model Permission {
+  id          String         @id @default(cuid())
+  name        String        @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permission")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model Event {
+  id               String      @id @default(cuid())
+  name             String
+  description      String?
+  date             DateTime?
+  time             DateTime?
+  requirements     String?
+  status           String?
+  maxParticipants  Int?
+  industry         String?
+  level            String?
+  imgUrl           String?
+
+  // relations
+  createdById String
+  createdBy   User        @relation("UserEventsCreated", fields: [createdById], references: [id])
+  participants UserEvent[] @relation("UserEventsJoined")
+}
+
+model UserEvent {
+  userId  String
+  eventId String
+
+  user  User  @relation("UserEventsJoined", fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation("UserEventsJoined", fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@map("user_event")
 }
