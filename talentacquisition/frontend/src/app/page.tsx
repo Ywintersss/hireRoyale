@@ -1,61 +1,32 @@
-import Image from "next/image";
-import Link from "next/link";
 export default function Home() {
     return (
-        <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-            <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-                <nav>
-                    <Link href='/auth/login'>Login</Link>
-                    <Link href='auth/register'>Register</Link>
-                </nav>
-            </main>
-            <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-                <a
-                    className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-                    href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/file.svg"
-                        alt="File icon"
-                        width={16}
-                        height={16}
-                    />
-                    Learn
-                </a>
-                <a
-                    className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-                    href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/window.svg"
-                        alt="Window icon"
-                        width={16}
-                        height={16}
-                    />
-                    Examples
-                </a>
-                <a
-                    className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-                    href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <Image
-                        aria-hidden
-                        src="/globe.svg"
-                        alt="Globe icon"
-                        width={16}
-                        height={16}
-                    />
-                    Go to nextjs.org →
-                </a>
-            </footer>
+        <div className="flex-1 p-8">
+            <div className="max-w-4xl mx-auto">
+                <h1 className="text-3xl font-bold mb-6" style={{ color: '#1E3A8A' }}>
+                    Dashboard
+                </h1>
+                <p className="text-gray-600 mb-8">
+                    Welcome to your dashboard. Use the sidebar to navigate between different sections.
+                </p>
+
+                {/* Demo Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((item) => (
+                        <div
+                            key={item}
+                            className="bg-white rounded-lg p-6 shadow-md border-l-4"
+                            style={{ borderLeftColor: item % 3 === 0 ? '#F97316' : item % 2 === 0 ? '#0EA5E9' : '#1E3A8A' }}
+                        >
+                            <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3A8A' }}>
+                                Card Title {item}
+                            </h3>
+                            <p className="text-gray-600 text-sm">
+                                This is a sample card to demonstrate the layout with the sidebar.
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
