@@ -2,6 +2,7 @@ import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.ts";
 import cors from "cors"
+import eventRoutes from './routes/events.ts'
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(
 );
 
 app.all('/api/auth/*splat', toNodeHandler(auth));
+app.use('/events', eventRoutes)
 
 // Mount express json middleware after Better Auth handler
 // or only apply it to routes that don't interact with Better Auth
