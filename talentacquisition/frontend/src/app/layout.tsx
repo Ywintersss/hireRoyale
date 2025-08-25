@@ -33,19 +33,24 @@ export default function RootLayout({
                 className={`${inter.className} antialiased`}
             >
                 <Providers>
-                    <div className='flex h-screen bg-gray-50'>
-                        <Sidebar
-                            isOpen={sidebarOpen}
-                            onToggle={() => setSidebarOpen(!sidebarOpen)}
-                            currentPath={currentPath}
-                            user={{
-                                name: 'John Doe',
-                                email: 'john@example.com',
-                                avatar: undefined
-                            }}
-                        />
-                        {children}
-                    </div>
+                    {(currentPath !== '/auth/login' && currentPath !== '/auth/register') ?
+                        <div className='flex h-screen bg-gray-50'>
+                            <Sidebar
+                                isOpen={sidebarOpen}
+                                onToggle={() => setSidebarOpen(!sidebarOpen)}
+                                currentPath={currentPath}
+                                user={{
+                                    name: 'John Doe',
+                                    email: 'john@example.com',
+                                    avatar: undefined
+                                }}
+                            />
+                            {children}
+                        </div> :
+                        <div>
+                            {children}
+                        </div>
+                    }
                 </Providers>
             </body>
         </html>
