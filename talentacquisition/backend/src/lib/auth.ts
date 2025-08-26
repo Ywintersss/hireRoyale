@@ -1,12 +1,31 @@
 import 'dotenv/config'
 import { betterAuth } from "better-auth";
+import { APIError } from 'better-auth/api';
 import { prismaAdapter } from "better-auth/adapters/prisma";
 // If your Prisma file is located elsewhere, you can change the path
 import { PrismaClient } from "../../app/generated/prisma/client.js";
-import { emailOTP } from 'better-auth/plugins';
+import { customSession, emailOTP } from 'better-auth/plugins';
 
 const prisma = new PrismaClient();
 export const auth = betterAuth({
+    user: {
+        additionalFields: {
+            roleId: {
+                type: "string",
+                required: false,
+                input: false,
+            },
+            roleName: {
+                type: 'string',
+                required: false,
+                input: true
+            },
+            contact: {
+                type: 'string',
+                input: true
+            }
+        },
+    },
     database: prismaAdapter(prisma, {
         provider: "sqlite",
     }),
@@ -20,5 +39,51 @@ export const auth = betterAuth({
         },
     },
     plugins: [
-    ]
+        customSession(async ({ user, session }) => {
+            const userWithRole = await prisma.user.findUnique({
+                where: { id: user.id },
+                include: { role: true },
+            });
+            return {
+                user: userWithRole,
+                session,
+            };
+        }),
+    ],
+    databaseHooks: {
+        user: {
+            create: {
+                before:
+                    async (data, ctx) => {
+                        console.log(data)
+                        if (data) {
+                            // Look up the role in Prisma
+                            try {
+                                const role = await prisma.role.findUnique({
+                                    where: { name: data.roleName as string },
+                                });
+                                console.log('role found')
+                                console.log(role)
+
+                                if (!role) {
+                                    throw new APIError("BAD_REQUEST", { message: `Unknown role: ${data.roleName}` });
+                                }
+
+                                return {
+                                    data: {
+                                        ...data,
+                                        roleId: role.id,
+                                        roleName: undefined,
+                                    }
+                                }
+                            } catch (error) {
+                                console.log(error)
+                            }
+
+                        }
+                    },
+
+            }
+        },
+    },
 });
