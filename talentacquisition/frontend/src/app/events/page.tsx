@@ -191,7 +191,7 @@ const EventsListPage = () => {
 
     return (
         <EventsPage
-            currentUser={currentUser}
+            currentUser={currentUser.user}
             events={events}
             onJoinEvent={handleJoinEvent}
             onCreateEvent={handleCreateEvent}

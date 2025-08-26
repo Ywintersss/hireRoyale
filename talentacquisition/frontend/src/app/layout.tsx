@@ -7,6 +7,7 @@ import { Providers } from "./providers";
 import Sidebar from '@/components/Sidebar';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { authClient } from '@/lib/auth-client';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,6 +28,8 @@ export default function RootLayout({
 }>) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const currentPath = usePathname()
+    const { data: session, error } = authClient.useSession()
+    console.log(session)
     return (
         <html lang="en">
             <body
@@ -39,12 +42,7 @@ export default function RootLayout({
                                 isOpen={sidebarOpen}
                                 onToggle={() => setSidebarOpen(!sidebarOpen)}
                                 currentPath={currentPath}
-                                user={{
-                                    name: 'John Doe',
-                                    email: 'john@example.com',
-                                    avatar: undefined
-                                }}
-                            />
+                                user={session?.user} />
                             {children}
                         </div> :
                         <div>

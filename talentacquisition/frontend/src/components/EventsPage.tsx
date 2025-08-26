@@ -32,8 +32,8 @@ const EventsPage: React.FC<EventsPageProps> = ({
         imgUrl: ''
     });
 
-    const isRecruiter = currentUser?.role ? (currentUser.role?.name === 'Recruiter') : true;
-    const isUser = currentUser?.role ? currentUser.role?.name === 'User' : false;
+    const isRecruiter = currentUser?.role ? (currentUser.role?.name === 'Recruiter') : false;
+    const isUser = currentUser?.role ? currentUser.role?.name === 'User' : true;
     const MINIMUM_RECRUITERS = 5;
 
     // Filter events based on user role and status

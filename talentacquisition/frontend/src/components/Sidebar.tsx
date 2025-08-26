@@ -29,22 +29,16 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SidebarProps, NavItem } from '../../types/types';
-import { authClient } from '@/lib/auth-client';
 
 
 const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     onToggle,
     currentPath = '/',
-    user = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        avatar: undefined
-    }
+    user
 }) => {
     const router = useRouter()
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-    const { data: session, error } = authClient.useSession()
 
     const mainNavItems: NavItem[] = [
         {
@@ -220,75 +214,78 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* User Profile Section */}
-                {isOpen && session ? (
 
-                    <div className="p-4 border-b border-gray-200">
-                        <Dropdown>
-                            <DropdownTrigger>
-                                <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <Avatar
-                                        src={user.avatar}
-                                        name={user.name}
-                                        size="md"
-                                        className="flex-shrink-0"
-                                        style={{
-                                            backgroundColor: '#0EA5E9'
-                                        }}
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-900 truncate">
-                                            {user.name}
-                                        </p>
-                                        <p className="text-xs text-gray-500 truncate">
-                                            {user.email}
-                                        </p>
+                {
+                    isOpen && (user
+                        ?
+
+                        <div className="p-4 border-b border-gray-200">
+                            <Dropdown>
+                                <DropdownTrigger>
+                                    <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <Avatar
+                                            src={user.image as string}
+                                            name={user.name}
+                                            size="md"
+                                            className="flex-shrink-0"
+                                            style={{
+                                                backgroundColor: '#0EA5E9'
+                                            }}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">
+                                                {user.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">
+                                                {user.email}
+                                            </p>
+                                        </div>
+                                        <ChevronDown className="h-4 w-4 text-gray-400" />
                                     </div>
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                                </div>
-                            </DropdownTrigger>
-                            <DropdownMenu>
-                                <DropdownItem
-                                    key="profile"
-                                    startContent={<User className="h-4 w-4" />}
-                                    onPress={() => handleNavigation('/profile')}
-                                >
-                                    View Profile
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="settings"
-                                    startContent={<Settings className="h-4 w-4" />}
-                                    onPress={() => handleNavigation('/settings')}
-                                >
-                                    Account Settings
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="logout"
-                                    startContent={<LogOut className="h-4 w-4" />}
-                                    color="danger"
-                                    onPress={handleLogout}
-                                >
-                                    Sign Out
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
-                    </div>
-                ) :
+                                </DropdownTrigger>
+                                <DropdownMenu>
+                                    <DropdownItem
+                                        key="profile"
+                                        startContent={<User className="h-4 w-4" />}
+                                        onPress={() => handleNavigation('/profile')}
+                                    >
+                                        View Profile
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="settings"
+                                        startContent={<Settings className="h-4 w-4" />}
+                                        onPress={() => handleNavigation('/settings')}
+                                    >
+                                        Account Settings
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="logout"
+                                        startContent={<LogOut className="h-4 w-4" />}
+                                        color="danger"
+                                        onPress={handleLogout}
+                                    >
+                                        Sign Out
+                                    </DropdownItem>
+                                </DropdownMenu>
+                            </Dropdown>
+                        </div> :
 
-                    <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Avatar
-                            name='G'
-                            size="md"
-                            className="flex-shrink-0"
-                            style={{
-                                backgroundColor: '#0EA5E9'
-                            }}
-                        />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
-                                Guest
-                            </p>
+                        <div className="flex items-center space-x-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                            <Avatar
+                                name='G'
+                                size="md"
+                                className="flex-shrink-0"
+                                style={{
+                                    backgroundColor: '#0EA5E9'
+                                }}
+                            />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">
+                                    Guest
+                                </p>
+                            </div>
                         </div>
-                    </div>
+                    )
                 }
 
                 {/* Navigation */}
@@ -337,8 +334,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <Divider className="my-4" />
 
                     {/* Bottom Navigation */}
-                    {session ?
-
+                    {user ?
                         <nav className="p-3 space-y-1">
                             {isOpen && (
                                 <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -409,12 +405,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* Collapsed User Avatar */}
-                {!isOpen && (
+                {!isOpen && user && (
                     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                         <Dropdown>
                             <DropdownTrigger>
                                 <Avatar
-                                    src={user.avatar}
+                                    src={user.image as string}
                                     name={user.name}
                                     size="sm"
                                     className="cursor-pointer"
@@ -452,45 +448,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 )}
             </div>
         </>
-    );
-};
-
-// Example usage component
-const SidebarDemo = () => {
-
-    return (
-        <div className="flex h-screen bg-gray-50">
-
-            {/* Main Content Area */}
-            <div className="flex-1 p-8">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-6" style={{ color: '#1E3A8A' }}>
-                        Dashboard
-                    </h1>
-                    <p className="text-gray-600 mb-8">
-                        Welcome to your dashboard. Use the sidebar to navigate between different sections.
-                    </p>
-
-                    {/* Demo Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3, 4, 5, 6].map((item) => (
-                            <div
-                                key={item}
-                                className="bg-white rounded-lg p-6 shadow-md border-l-4"
-                                style={{ borderLeftColor: item % 3 === 0 ? '#F97316' : item % 2 === 0 ? '#0EA5E9' : '#1E3A8A' }}
-                            >
-                                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3A8A' }}>
-                                    Card Title {item}
-                                </h3>
-                                <p className="text-gray-600 text-sm">
-                                    This is a sample card to demonstrate the layout with the sidebar.
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
     );
 };
 

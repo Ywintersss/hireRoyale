@@ -7,6 +7,7 @@ export interface RegistrationFormSchema {
     confirmPassword: string,
     agreeToTerms: boolean,
     subscribeNewsletter: boolean
+    role: 'user' | 'recruiter';
 }
 
 export interface RegistrationErrorSchema {
@@ -19,17 +20,12 @@ export interface RegistrationErrorSchema {
     country?: string,
     agreeToTerms?: string,
     subscribeNewsletter?: string
+    role?: string;
 }
 
 
 // Types based on your Prisma schema
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-    image?: string;
-    role?: Role;
-}
+export interface User { id: string; email: string; emailVerified: boolean; name: string; createdAt: Date; updatedAt: Date; image?: string | null | undefined; }
 
 export interface Role {
     id: string;
@@ -74,11 +70,7 @@ export interface SidebarProps {
     isOpen: boolean;
     onToggle: () => void;
     currentPath?: string;
-    user?: {
-        name: string;
-        email: string;
-        avatar?: string;
-    };
+    user?: User;
 }
 
 export interface NavItem {

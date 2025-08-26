@@ -13,7 +13,7 @@ import {
 } from "@heroui/react";
 import { Eye, EyeOff, Mail, Lock, Github } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 
 interface LoginFormSchema {
     email: string;
@@ -39,6 +39,7 @@ const LoginPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
     const [isGithubLoading, setIsGithubLoading] = useState(false);
+    const router = useRouter()
 
     const validateForm = () => {
         const newErrors: LoginErrorSchema = {};
@@ -76,7 +77,7 @@ const LoginPage = () => {
                 },
                 onSuccess: (ctx) => {
                     setIsLoading(false);
-                    redirect('/');
+                    router.push('/')
                 },
                 onError: (ctx) => {
                     setIsLoading(false);

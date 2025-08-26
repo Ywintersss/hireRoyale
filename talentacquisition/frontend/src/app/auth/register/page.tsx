@@ -10,14 +10,16 @@ import {
     Link,
     Checkbox,
     Chip,
+    RadioGroup,
+    Radio,
 } from "@heroui/react";
-import { Eye, EyeOff, User, Mail, Lock, Phone } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, Phone, Users, Briefcase } from 'lucide-react';
 import { RegistrationErrorSchema, RegistrationFormSchema } from '../../../../types/types';
-import bcrypt from 'bcrypt'
 import { authClient } from '@/lib/auth-client';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 
 const RegistrationPage = () => {
+    const router = useRouter()
     const [formData, setFormData] = useState<RegistrationFormSchema>({
         firstName: '',
         lastName: '',
@@ -26,7 +28,8 @@ const RegistrationPage = () => {
         password: '',
         confirmPassword: '',
         agreeToTerms: false,
-        subscribeNewsletter: false
+        subscribeNewsletter: false,
+        role: 'user' // Default selection
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -54,6 +57,7 @@ const RegistrationPage = () => {
             newErrors.confirmPassword = 'Passwords do not match';
         }
         if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
+        if (!formData.role) newErrors.role = 'Please select account type';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -63,21 +67,27 @@ const RegistrationPage = () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        // Simulate API call
-        // const hashedPassword = await bcrypt.hash(formData.password, 10)
         const name = `${formData.firstName} ${formData.lastName}`
         const { data, error } = await authClient.signUp.email(
-            { email: formData.email, password: formData.password, name: name, callbackURL: "/" },
+            {
+                email: formData.email,
+                password: formData.password,
+                name: name,
+                roleName: formData.role.charAt(0).toUpperCase() + formData.role.slice(1),
+                contact: formData.phone,
+                callbackURL: "/",
+            },
             {
                 onRequest: (ctx) => {
 
                 },
                 onSuccess: (ctx) => {
                     setIsLoading(false);
-                    redirect('/')
-                    alert('Registration successful! (This is a demo)');
+                    router.push('/');
+                    alert(`Registration successful as ${formData.role}! (This is a demo)`);
                 },
                 onError: (ctx) => {
+                    setIsLoading(false);
                     alert(ctx.error.message)
                 }
             }
@@ -135,6 +145,55 @@ const RegistrationPage = () => {
 
                     <CardBody className="gap-4 pt-6">
                         <div className="flex flex-col gap-4">
+                            {/* Account Type Selection */}
+                            <div className="flex flex-col gap-2">
+                                <label className="text-brand-blue font-medium text-sm">
+                                    Account Type
+                                </label>
+                                <RadioGroup
+                                    value={formData.role}
+                                    onValueChange={(value) => handleInputChange('role', value)}
+                                    orientation="horizontal"
+                                    classNames={{
+                                        base: "flex gap-4",
+                                    }}
+                                >
+                                    <Radio
+                                        value="user"
+                                        classNames={{
+                                            base: "inline-flex m-0 bg-[#EEF2FF] hover:bg-[#E0E7FF] items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-brand-teal",
+                                            control: "text-brand-teal",
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4 text-brand-blue" />
+                                            <div className="flex flex-col">
+                                                <span className="text-brand-blue font-medium">Job Seeker</span>
+                                                <span className="text-xs text-gray-500">Looking for opportunities</span>
+                                            </div>
+                                        </div>
+                                    </Radio>
+                                    <Radio
+                                        value="recruiter"
+                                        classNames={{
+                                            base: "inline-flex m-0 bg-[#F0F9FF] hover:bg-[#E0F7FA] items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-brand-orange",
+                                            control: "text-brand-orange",
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Briefcase className="h-4 w-4 text-brand-teal" />
+                                            <div className="flex flex-col">
+                                                <span className="text-brand-teal font-medium">Recruiter</span>
+                                                <span className="text-xs text-gray-500">Hiring talent</span>
+                                            </div>
+                                        </div>
+                                    </Radio>
+                                </RadioGroup>
+                                {errors.role && (
+                                    <p className="text-red-500 text-xs">{errors.role}</p>
+                                )}
+                            </div>
+
                             {/* Name Fields */}
                             <div className="flex gap-2">
                                 <Input
@@ -314,7 +373,7 @@ const RegistrationPage = () => {
                                 onPress={handleSubmit}
                                 className="bg-brand-teal w-full font-semibold text-white transition-all duration-200 hover:shadow-lg"
                             >
-                                {isLoading ? 'Creating Account...' : 'Create Account'}
+                                {isLoading ? 'Creating Account...' : `Create ${formData.role === 'recruiter' ? 'Recruiter' : 'User'} Account`}
                             </Button>
 
                             {/* Alternative Action */}
@@ -364,7 +423,7 @@ const RegistrationPage = () => {
                                 variant="flat"
                                 className='text-brand-orange bg-[#FFF7ED]'
                             >
-                                Free Trial
+                                {formData.role === 'recruiter' ? 'Post Jobs' : 'Free Trial'}
                             </Chip>
                         </div>
                     </CardBody>
@@ -374,7 +433,10 @@ const RegistrationPage = () => {
                 <p
                     className="text-white text-center text-sm mt-6 opacity-90"
                 >
-                    By registering, you'll gain access to our full platform features
+                    {formData.role === 'recruiter'
+                        ? "Join as a recruiter to find the best talent for your company"
+                        : "By registering, you'll gain access to our full platform features"
+                    }
                 </p>
             </div>
         </div>
