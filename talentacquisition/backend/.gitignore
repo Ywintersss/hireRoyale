@@ -3,3 +3,5 @@ db.sqlite
 
 /app/generated/prisma
 .env
+
+assets
