@@ -1,17 +1,21 @@
 import { PrismaClient } from '../../app/generated/prisma/index.js';
 import type { Request, Response } from 'express'
-import type { AuthenticatedRequest } from '../types/types.ts';
+import { auth } from '../lib/auth.ts';
+import { fromNodeHeaders } from 'better-auth/node';
 
 const prisma = new PrismaClient()
 
-export const createEvent = async (req: AuthenticatedRequest, res: Response) => {
+export const createEvent = async (req: Request, res: Response) => {
     try {
-        const session = req.auth;
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
         if (!session?.user) {
             return res.status(401).json({ error: "Unauthorized" });
         }
 
-        const userId = session.user.id; // 👈 authenticated user’s ID
+        const userId = session.user.id;
         const formData = req.body;
 
         const newEvent = await prisma.event.create({
@@ -32,6 +36,13 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response) => {
             },
         });
 
+        await prisma.userEvent.create({
+            data: {
+                userId: userId,
+                eventId: newEvent.id
+            }
+        })
+
         return res.status(201).json(newEvent);
     } catch (err: any) {
         console.error("Error creating event:", err);
@@ -39,8 +50,24 @@ export const createEvent = async (req: AuthenticatedRequest, res: Response) => {
     }
 }
 
-export const getEvents = (req: Request, res: Response) => {
-    res.json({ message: '' })
+export const getEvents = async (req: Request, res: Response) => {
+    const events = await prisma.event.findMany({
+        include: {
+            participants: {
+                include: {
+                    user: {
+                        include: {
+                            role: true
+                        }
+                    }
+                }
+            },
+            createdBy: true
+        },
+        take: 10
+    })
+    console.log(events)
+    res.json({ events: events })
 }
 
 export const updateEvent = (req: Request, res: Response) => {
