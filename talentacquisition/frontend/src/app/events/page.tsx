@@ -52,6 +52,23 @@ const EventsListPage = () => {
         },
     })
 
+    const updateMutation = useMutation({
+        mutationFn: async (updatedEventData: EventRegistration) => {
+            return fetch('http://localhost:8000/events/update', {
+                method: 'POST',
+                body: JSON.stringify(updatedEventData),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+        },
+        onSuccess: () => {
+            //Refetch
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+        },
+    })
+
     console.log(events)
 
     const handleJoinEvent = async (eventId: string) => {
@@ -98,9 +115,16 @@ const EventsListPage = () => {
 
     };
 
-    const handleEditEvent = async (eventId: string, eventData: any) => {
+    const handleEditEvent = async (eventId: string, eventData: EventRegistration) => {
         // Simulate API call
         console.log(`Editing event ${eventId}:`, eventData);
+
+        const dataToUpdate = {
+            ...eventData,
+            eventId: eventId
+        }
+
+        updateMutation.mutate(dataToUpdate)
 
         // setEvents(prevEvents =>
         //     prevEvents.map(event =>

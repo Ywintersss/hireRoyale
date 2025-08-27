@@ -241,7 +241,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
 
                             return (
                                 <Card key={event.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
-                                    <CardHeader className="pb-2">
+                                    <CardHeader className="">
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-2">
@@ -269,8 +269,9 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             </div>
 
                                             {/* Actions Dropdown for Recruiters */}
-                                            {isRecruiter && event.createdBy.id === currentUser?.id && (
+                                            {isRecruiter && event.createdBy.id === currentUser?.id && event.status !== "Approved" && (
                                                 <Button
+                                                    className="items-start mt-1"
                                                     isIconOnly
                                                     variant="light"
                                                     size="sm"

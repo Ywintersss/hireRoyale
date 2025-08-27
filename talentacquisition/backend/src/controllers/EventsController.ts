@@ -69,7 +69,39 @@ export const getEvents = async (req: Request, res: Response) => {
     res.json({ events: events })
 }
 
-export const updateEvent = (req: Request, res: Response) => {
+export const updateEvent = async (req: Request, res: Response) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session?.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const userId = session.user.id;
+        const formData = req.body;
+
+        const updateEvent = await prisma.event.update({
+            where: {
+                id: formData.eventId,
+            },
+            data: {
+                ...formData,
+                date: new Date(`${formData.date}T00:00:00`),
+                time: new Date(`${formData.date}T${formData.time}:00`),
+                maxParticipants: Number(formData.maxParticipants),
+
+                eventId: undefined
+            }
+        })
+
+        return res.status(201).json(updateEvent)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ error: "Failed to update event" })
+
+    }
 }
 
 export const deleteEvent = (req: Request, res: Response) => {
