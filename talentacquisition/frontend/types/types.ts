@@ -32,6 +32,23 @@ export interface Role {
     name: string;
 }
 
+export interface EventRegistration {
+    id: string;
+    name: string;
+    description?: string;
+    date?: Date;
+    time?: Date;
+    requirements?: string;
+    status?: string;
+    maxParticipants?: number;
+    industry?: string;
+    level?: string;
+    imgUrl?: string;
+    participants: UserEvent[];
+    _count?: {
+        participants: number;
+    };
+}
 export interface Event {
     id: string;
     name: string;

@@ -2,8 +2,6 @@ import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGro
 import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Event, EventsPageProps } from "../../types/types";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/router";
 
 const EventsPage: React.FC<EventsPageProps> = ({
     currentUser,
@@ -12,7 +10,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
     onCreateEvent,
     onEditEvent
 }) => {
-    const [filteredEvents, setFilteredEvents] = useState<Event[]>(events);
+    const [filteredEvents, setFilteredEvents] = useState<Event[]>(events || []);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -171,7 +169,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
     };
 
     const getRecruiterCount = (event: Event) => {
-        return event.participants.filter(p => p.user.role?.name === 'Recruiter').length;
+        return event.participants ? event.participants.filter(p => p.user.role?.name === 'Recruiter').length : 0;
     };
 
     return (
@@ -240,7 +238,8 @@ const EventsPage: React.FC<EventsPageProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredEvents.map((event) => {
                             const recruiterCount = getRecruiterCount(event);
-                            const userJoined = isUserJoined(event);
+                            {/* const userJoined = isUserJoined(event); */ }
+                            const userJoined = false
 
                             return (
                                 <Card key={event.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
@@ -488,9 +487,9 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="beginner" value="beginner">Beginner</SelectItem>
-                                        <SelectItem key="intermediate" value="intermediate">Intermediate</SelectItem>
-                                        <SelectItem key="advanced" value="advanced">Advanced</SelectItem>
+                                        <SelectItem key="entry" value="entry">Entry Level</SelectItem>
+                                        <SelectItem key="intermediate" value="intermediate">Intermediate Level</SelectItem>
+                                        <SelectItem key="senior" value="senior">Senior Level</SelectItem>
                                     </Select>
                                 </div>
 
@@ -624,9 +623,9 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="beginner" value="beginner">Beginner</SelectItem>
-                                        <SelectItem key="intermediate" value="intermediate">Intermediate</SelectItem>
-                                        <SelectItem key="advanced" value="advanced">Advanced</SelectItem>
+                                        <SelectItem key="entry" value="entry">Entry Level</SelectItem>
+                                        <SelectItem key="intermediate" value="intermediate">Intermediate Level</SelectItem>
+                                        <SelectItem key="senior" value="senior">Senior Level</SelectItem>
                                     </Select>
                                 </div>
 
@@ -790,7 +789,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                 <p className="text-sm text-gray-500">Created by</p>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Avatar
-                                                        src={selectedEvent.createdBy.image}
+                                                        src={selectedEvent.createdBy.image as string}
                                                         name={selectedEvent.createdBy.name}
                                                         size="sm"
                                                     />

@@ -2,94 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { usePathname, useRouter } from 'next/navigation';
-import { Event } from '../../../types/types';
+import { Event, EventRegistration } from '../../../types/types';
 import EventsPage from '@/components/EventsPage';
+import { useQuery } from '@tanstack/react-query';
 
 // Demo component showing how to use the EventsPage
 const EventsListPage = () => {
-    const [events, setEvents] = useState<Event[]>([
-        // Mock data - replace with real data from your API
-        {
-            id: '1',
-            name: 'Tech Recruitment Fair 2024',
-            description: 'Connect with top tech companies and discover exciting career opportunities in software development, AI, and more.',
-            date: new Date('2024-03-15'),
-            time: new Date('2024-03-15T10:00:00'),
-            requirements: 'Bachelor degree in Computer Science or related field, portfolio required',
-            status: 'approved',
-            maxParticipants: 50,
-            industry: 'technology',
-            level: 'intermediate',
-            imgUrl: '',
-            createdBy: {
-                id: '1',
-                name: 'John Recruiter',
-                email: 'john@company.com',
-                role: { id: '1', name: 'Recruiter' }
-            },
-            participants: [
-                {
-                    userId: '2',
-                    eventId: '1',
-                    user: {
-                        id: '2',
-                        name: 'Jane Smith',
-                        email: 'jane@example.com',
-                        role: { id: '2', name: 'User' }
-                    },
-                    event: {} as Event
-                },
-                {
-                    userId: '3',
-                    eventId: '1',
-                    user: {
-                        id: '3',
-                        name: 'Bob Johnson',
-                        email: 'bob@example.com',
-                        role: { id: '1', name: 'Recruiter' }
-                    },
-                    event: {} as Event
-                }
-            ],
-            _count: { participants: 2 }
-        },
-        {
-            id: '2',
-            name: 'Healthcare Professionals Meetup',
-            description: 'Networking event for healthcare professionals and recent graduates.',
-            date: new Date('2024-03-20'),
-            time: new Date('2024-03-20T14:00:00'),
-            requirements: 'Medical background preferred',
-            status: 'pending',
-            maxParticipants: 30,
-            industry: 'healthcare',
-            level: 'beginner',
-            imgUrl: '',
-            createdBy: {
-                id: '4',
-                name: 'Sarah Healthcare',
-                email: 'sarah@hospital.com',
-                role: { id: '1', name: 'Recruiter' }
-            },
-            participants: [
-                {
-                    userId: '5',
-                    eventId: '2',
-                    user: {
-                        id: '5',
-                        name: 'Mike Recruiter',
-                        email: 'mike@company.com',
-                        role: { id: '1', name: 'Recruiter' }
-                    },
-                    event: {} as Event
-                }
-            ],
-            _count: { participants: 1 }
-        }
-    ]);
-
     const router = useRouter()
     const { data: currentUser, error, isPending } = authClient.useSession();
+
+    const { data: events, isLoading } = useQuery({
+        queryKey: ['events'], queryFn: async () => {
+            const response = await fetch('http://localhost:8000/events/all')
+            return response.json()
+        }
+    })
+
+    console.log(events)
 
     const handleJoinEvent = async (eventId: string) => {
         // Simulate API call
@@ -129,7 +58,7 @@ const EventsListPage = () => {
         // Simulate API call
         console.log('Creating event:', eventData);
 
-        const newEvent: Event = {
+        const newEvent: EventRegistration = {
             id: Date.now().toString(),
             name: eventData.name,
             description: eventData.description,
@@ -141,7 +70,6 @@ const EventsListPage = () => {
             industry: eventData.industry,
             level: eventData.level,
             imgUrl: eventData.imgUrl,
-            createdBy: currentUser.user.id,
             participants: [],
             _count: { participants: 0 }
         };
@@ -150,14 +78,16 @@ const EventsListPage = () => {
             const response = await fetch('http://localhost:8000/events/create', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json' // Important for JSON data
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(eventData)
+                body: JSON.stringify(newEvent),
+                credentials: 'include'
             })
 
             const data = await response.json()
+            console.log(data)
 
-            setEvents(prevEvents => [...prevEvents, data]);
+            // setEvents(prevEvents => [...prevEvents, data]);
 
         } catch (err) {
             console.log(err)
@@ -169,34 +99,38 @@ const EventsListPage = () => {
         // Simulate API call
         console.log(`Editing event ${eventId}:`, eventData);
 
-        setEvents(prevEvents =>
-            prevEvents.map(event =>
-                event.id === eventId
-                    ? {
-                        ...event,
-                        name: eventData.name,
-                        description: eventData.description,
-                        date: eventData.date ? new Date(eventData.date) : event.date,
-                        time: eventData.time ? new Date(`2024-01-01T${eventData.time}:00`) : event.time,
-                        requirements: eventData.requirements,
-                        maxParticipants: eventData.maxParticipants ? parseInt(eventData.maxParticipants) : event.maxParticipants,
-                        industry: eventData.industry,
-                        level: eventData.level,
-                        imgUrl: eventData.imgUrl
-                    }
-                    : event
-            )
-        );
+        // setEvents(prevEvents =>
+        //     prevEvents.map(event =>
+        //         event.id === eventId
+        //             ? {
+        //                 ...event,
+        //                 name: eventData.name,
+        //                 description: eventData.description,
+        //                 date: eventData.date ? new Date(eventData.date) : event.date,
+        //                 time: eventData.time ? new Date(`2024-01-01T${eventData.time}:00`) : event.time,
+        //                 requirements: eventData.requirements,
+        //                 maxParticipants: eventData.maxParticipants ? parseInt(eventData.maxParticipants) : event.maxParticipants,
+        //                 industry: eventData.industry,
+        //                 level: eventData.level,
+        //                 imgUrl: eventData.imgUrl
+        //             }
+        //             : event
+        //     )
+        // );
     };
 
     return (
-        <EventsPage
-            currentUser={currentUser.user}
-            events={events}
-            onJoinEvent={handleJoinEvent}
-            onCreateEvent={handleCreateEvent}
-            onEditEvent={handleEditEvent}
-        />
+        <>
+            {!isLoading &&
+                <EventsPage
+                    currentUser={currentUser?.user}
+                    events={events.events}
+                    onJoinEvent={handleJoinEvent}
+                    onCreateEvent={handleCreateEvent}
+                    onEditEvent={handleEditEvent}
+                />
+            }
+        </>
     );
 };
 
