@@ -5,6 +5,9 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 // If your Prisma file is located elsewhere, you can change the path
 import { PrismaClient } from "../../app/generated/prisma/client.js";
 import { customSession, emailOTP } from 'better-auth/plugins';
+import { fromNodeHeaders } from 'better-auth/node';
+import type { AuthenticatedRequest } from '../types/types.ts';
+
 
 const prisma = new PrismaClient();
 export const auth = betterAuth({
@@ -21,6 +24,10 @@ export const auth = betterAuth({
                 input: true
             },
             contact: {
+                type: 'string',
+                input: true
+            },
+            password: {
                 type: 'string',
                 input: true
             }
@@ -87,3 +94,9 @@ export const auth = betterAuth({
         },
     },
 });
+
+export const getSession = (req: AuthenticatedRequest) => {
+    const session = auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
+
+    return session
+};
