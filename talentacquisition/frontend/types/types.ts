@@ -89,6 +89,7 @@ export interface EventsPageProps {
     onCreateEvent: (eventData: any) => Promise<void>;
     onEditEvent: (eventId: string, eventData: any) => Promise<void>;
     onDeleteEvent: (eventId: string) => Promise<void>;
+    onLeaveEvent: (eventId: string) => Promise<void>
 }
 
 export interface SidebarProps {

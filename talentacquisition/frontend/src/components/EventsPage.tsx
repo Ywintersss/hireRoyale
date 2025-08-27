@@ -1,5 +1,5 @@
 import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGroup, Avatar, Divider, Modal, ModalContent, ModalHeader, ModalBody, Input, Textarea, ModalFooter } from "@heroui/react";
-import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star } from "lucide-react";
+import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Event, EventsPageProps } from "../../types/types";
 
@@ -9,8 +9,10 @@ const EventsPage: React.FC<EventsPageProps> = ({
     onJoinEvent,
     onCreateEvent,
     onEditEvent,
-    onDeleteEvent
+    onDeleteEvent,
+    onLeaveEvent
 }) => {
+    const [isHover, setIsHover] = useState(false)
     const [filteredEvents, setFilteredEvents] = useState<Event[]>(events || []);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -126,7 +128,12 @@ const EventsPage: React.FC<EventsPageProps> = ({
     const handleJoinEvent = async (eventId: string) => {
         setIsLoading(true);
         try {
-            await onJoinEvent(eventId);
+            if (!isHover) {
+                await onJoinEvent(eventId);
+            } else {
+                await onLeaveEvent(eventId);
+                setIsHover(false)
+            }
         } catch (error) {
             console.error('Error joining event:', error);
         } finally {
@@ -397,11 +404,13 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                 <Button
                                                     size="sm"
                                                     variant="bordered"
-                                                    className="flex-1 border-green-500 text-green-600"
-                                                    startContent={<CheckCircle className="h-4 w-4" />}
-                                                    isDisabled
+                                                    className="flex-1 border-green-500 text-green-600 hover:border-red-500 hover:text-red-600"
+                                                    startContent={isHover ? <X className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                    onMouseEnter={() => setIsHover(true)}
+                                                    onMouseLeave={() => setIsHover(false)}
+                                                    onPress={() => handleJoinEvent(event.id)}
                                                 >
-                                                    Joined
+                                                    {isHover ? "Leave Event" : "Joined"}
                                                 </Button>
                                             )}
                                         </div>

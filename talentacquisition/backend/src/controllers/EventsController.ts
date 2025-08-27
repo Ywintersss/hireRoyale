@@ -153,3 +153,32 @@ export const joinEvent = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to join event" })
     }
 }
+
+export const leaveEvent = async (req: Request, res: Response) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session?.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const userId = session.user.id;
+        const { eventId } = req.params
+
+        const status = await prisma.userEvent.delete({
+            where: {
+                userId_eventId: {
+                    userId: userId,
+                    eventId: eventId as string,
+                },
+            }
+        })
+
+        return res.status(201).json(status)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: "Failed to leave event" })
+    }
+}

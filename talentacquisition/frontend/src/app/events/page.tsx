@@ -82,8 +82,18 @@ const EventsListPage = () => {
         },
     })
 
-
-    console.log(events)
+    const leaveMutation = useMutation({
+        mutationFn: async (eventId: string) => {
+            return fetch(`http://localhost:8000/events/leave/${eventId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+        },
+        onSuccess: () => {
+            //Refetch
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+        },
+    })
 
     const handleJoinEvent = async (eventId: string) => {
         if (!currentUser?.user) {
@@ -142,6 +152,12 @@ const EventsListPage = () => {
         deleteMutation.mutate(eventId)
     }
 
+    const handleLeaveEvent = async (eventId: string) => {
+        console.log(`Leaving event ${eventId}`)
+
+        leaveMutation.mutate(eventId)
+    }
+
     return (
         <>
             {!isLoading &&
@@ -152,6 +168,7 @@ const EventsListPage = () => {
                     onCreateEvent={handleCreateEvent}
                     onEditEvent={handleEditEvent}
                     onDeleteEvent={handleDeleteEvent}
+                    onLeaveEvent={handleLeaveEvent}
                 />
             }
         </>
