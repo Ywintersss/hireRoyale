@@ -66,7 +66,6 @@ export const getEvents = async (req: Request, res: Response) => {
         },
         take: 10
     })
-    console.log(events)
     res.json({ events: events })
 }
 
@@ -77,3 +76,29 @@ export const deleteEvent = (req: Request, res: Response) => {
 
 }
 
+export const joinEvent = async (req: Request, res: Response) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session?.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const userId = session.user.id;
+        const formData = req.body;
+
+        await prisma.userEvent.create({
+            data: {
+                userId: userId,
+                eventId: formData.eventId
+            }
+        })
+
+        return res.status(201).json({ status: 'Success' })
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ error: "Failed to join event" })
+    }
+}

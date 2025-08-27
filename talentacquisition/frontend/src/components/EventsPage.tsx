@@ -39,8 +39,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
         let filtered = events;
 
         if (isUser) {
-            // Users can only see approved events
-            filtered = events.filter(event => event.status === 'approved');
+            filtered = events.filter(event => event.status === 'Approved');
         }
 
         // Apply additional filters
@@ -202,11 +201,11 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                 value: "text-gray-900"
                             }}
                         >
-                            <SelectItem key="all" value="all">All Events</SelectItem>
-                            <SelectItem key="joined" value="joined">Joined Events</SelectItem>
-                            {isRecruiter && (
-                                <SelectItem key="my-events" value="my-events">My Events</SelectItem>
-                            )}
+                            <SelectItem key="all" >All Events</SelectItem>
+                            <SelectItem key="joined">Joined Events</SelectItem>
+                            {isRecruiter ? (
+                                <SelectItem key="my-events" >My Events</SelectItem>
+                            ) : <></>}
                         </Select>
 
                         {/* Create Event Button - Only for Recruiters */}
@@ -238,8 +237,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredEvents.map((event) => {
                             const recruiterCount = getRecruiterCount(event);
-                            {/* const userJoined = isUserJoined(event); */ }
-                            const userJoined = false
+                            const userJoined = isUserJoined(event);
 
                             return (
                                 <Card key={event.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
@@ -339,7 +337,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                     {event.participants.slice(0, 3).map((participant) => (
                                                         <Avatar
                                                             key={participant.userId}
-                                                            src={participant.user.image}
+                                                            src={participant.user.image as string}
                                                             name={participant.user.name}
                                                             size="sm"
                                                         />
@@ -470,11 +468,11 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="technology" value="technology">Technology</SelectItem>
-                                        <SelectItem key="finance" value="finance">Finance</SelectItem>
-                                        <SelectItem key="healthcare" value="healthcare">Healthcare</SelectItem>
-                                        <SelectItem key="education" value="education">Education</SelectItem>
-                                        <SelectItem key="retail" value="retail">Retail</SelectItem>
+                                        <SelectItem key="technology" >Technology</SelectItem>
+                                        <SelectItem key="finance">Finance</SelectItem>
+                                        <SelectItem key="healthcare">Healthcare</SelectItem>
+                                        <SelectItem key="education">Education</SelectItem>
+                                        <SelectItem key="retail">Retail</SelectItem>
                                     </Select>
 
                                     <Select
@@ -487,9 +485,9 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="entry" value="entry">Entry Level</SelectItem>
-                                        <SelectItem key="intermediate" value="intermediate">Intermediate Level</SelectItem>
-                                        <SelectItem key="senior" value="senior">Senior Level</SelectItem>
+                                        <SelectItem key="entry">Entry Level</SelectItem>
+                                        <SelectItem key="intermediate">Intermediate Level</SelectItem>
+                                        <SelectItem key="senior">Senior Level</SelectItem>
                                     </Select>
                                 </div>
 
@@ -606,11 +604,11 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="technology" value="technology">Technology</SelectItem>
-                                        <SelectItem key="finance" value="finance">Finance</SelectItem>
-                                        <SelectItem key="healthcare" value="healthcare">Healthcare</SelectItem>
-                                        <SelectItem key="education" value="education">Education</SelectItem>
-                                        <SelectItem key="retail" value="retail">Retail</SelectItem>
+                                        <SelectItem key="technology">Technology</SelectItem>
+                                        <SelectItem key="finance" >Finance</SelectItem>
+                                        <SelectItem key="healthcare">Healthcare</SelectItem>
+                                        <SelectItem key="education">Education</SelectItem>
+                                        <SelectItem key="retail">Retail</SelectItem>
                                     </Select>
 
                                     <Select
@@ -623,9 +621,9 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                             trigger: 'border-gray-300 focus:border-brand-teal',
                                         }}
                                     >
-                                        <SelectItem key="entry" value="entry">Entry Level</SelectItem>
-                                        <SelectItem key="intermediate" value="intermediate">Intermediate Level</SelectItem>
-                                        <SelectItem key="senior" value="senior">Senior Level</SelectItem>
+                                        <SelectItem key="entry">Entry Level</SelectItem>
+                                        <SelectItem key="intermediate">Intermediate Level</SelectItem>
+                                        <SelectItem key="senior">Senior Level</SelectItem>
                                     </Select>
                                 </div>
 
@@ -768,7 +766,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                     {selectedEvent.participants.map((participant) => (
                                                         <div key={participant.userId} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
                                                             <Avatar
-                                                                src={participant.user.image}
+                                                                src={participant.user.image as string}
                                                                 name={participant.user.name}
                                                                 size="sm"
                                                             />

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SidebarProps, NavItem } from '../../types/types';
+import { authClient } from '@/lib/auth-client';
 
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -114,9 +115,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     ]
 
     const handleLogout = async () => {
-        // Replace with your Better Auth logout logic
-        console.log('Logout clicked');
-        // Example: await authClient.signOut({ ... });
+        await authClient.signOut({
+            fetchOptions: {
+                onSuccess: () => {
+                    router.push("/");
+                },
+            },
+        });
     };
 
     const handleNavigation = (href: string) => {

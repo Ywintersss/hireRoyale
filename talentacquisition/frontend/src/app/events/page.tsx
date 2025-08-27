@@ -4,11 +4,11 @@ import { authClient } from '@/lib/auth-client';
 import { usePathname, useRouter } from 'next/navigation';
 import { Event, EventRegistration } from '../../../types/types';
 import EventsPage from '@/components/EventsPage';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-// Demo component showing how to use the EventsPage
 const EventsListPage = () => {
     const router = useRouter()
+    const queryClient = useQueryClient()
     const { data: currentUser, error, isPending } = authClient.useSession();
 
     const { data: events, isLoading } = useQuery({
@@ -18,35 +18,50 @@ const EventsListPage = () => {
         }
     })
 
+    const createMutation = useMutation({
+        mutationFn: async (eventData: EventRegistration) => {
+            return fetch('http://localhost:8000/events/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(eventData),
+                credentials: 'include'
+            })
+
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["events"] })
+        }
+    })
+
+    const joinMutation = useMutation({
+        mutationFn: async (eventData: { eventId: string }) => {
+            return fetch('http://localhost:8000/events/join', {
+                method: 'POST',
+                body: JSON.stringify(eventData),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+        },
+        onSuccess: () => {
+            //Refetch
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+        },
+    })
+
     console.log(events)
 
     const handleJoinEvent = async (eventId: string) => {
-        // Simulate API call
-        console.log(`Joining event ${eventId}`);
+        if (!currentUser?.user) {
+            router.push('/auth/login')
+            return;
+        }
 
-        // Update local state
-        // setEvents(prevEvents =>
-        //     prevEvents.map(event =>
-        //         event.id === eventId
-        //             ? {
-        //                 ...event,
-        //                 participants: [
-        //                     ...event.participants,
-        //                     {
-        //                         userId: currentUser.user.id,
-        //                         eventId: event.id,
-        //                         user: currentUser.user,
-        //                         event: event
-        //                     }
-        //                 ],
-        //                 _count: {
-        //                     ...event._count,
-        //                     participants: (event._count?.participants || event.participants.length) + 1
-        //                 }
-        //             }
-        //             : event
-        //     )
-        // );
+        console.log(`Joining event ${eventId}`);
+        joinMutation.mutate({ eventId: eventId })
     };
 
     const handleCreateEvent = async (eventData: any) => {
@@ -55,7 +70,6 @@ const EventsListPage = () => {
             return;
         }
 
-        // Simulate API call
         console.log('Creating event:', eventData);
 
         const newEvent: EventRegistration = {
@@ -75,18 +89,7 @@ const EventsListPage = () => {
         };
 
         try {
-            const response = await fetch('http://localhost:8000/events/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(newEvent),
-                credentials: 'include'
-            })
-
-            const data = await response.json()
-            console.log(data)
-
+            createMutation.mutate(newEvent)
             // setEvents(prevEvents => [...prevEvents, data]);
 
         } catch (err) {

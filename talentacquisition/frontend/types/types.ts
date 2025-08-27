@@ -23,9 +23,16 @@ export interface RegistrationErrorSchema {
     role?: string;
 }
 
-
-// Types based on your Prisma schema
-export interface User { id: string; email: string; emailVerified: boolean; name: string; createdAt: Date; updatedAt: Date; image?: string | null | undefined; }
+export interface User {
+    id: string;
+    email: string;
+    emailVerified: boolean;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    image?: string | null | undefined;
+    role: Role
+}
 
 export interface Role {
     id: string;
