@@ -53,10 +53,10 @@ const EventsListPage = () => {
     })
 
     const updateMutation = useMutation({
-        mutationFn: async (updatedEventData: EventRegistration) => {
-            return fetch('http://localhost:8000/events/update', {
-                method: 'POST',
-                body: JSON.stringify(updatedEventData),
+        mutationFn: async ({ eventId, eventData }: { eventId: string, eventData: EventRegistration }) => {
+            return fetch(`http://localhost:8000/events/update/${eventId}`, {
+                method: 'PUT',
+                body: JSON.stringify(eventData),
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -68,6 +68,20 @@ const EventsListPage = () => {
             queryClient.invalidateQueries({ queryKey: ["events"] });
         },
     })
+
+    const deleteMutation = useMutation({
+        mutationFn: async (eventId: string) => {
+            return fetch(`http://localhost:8000/events/delete/${eventId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+        },
+        onSuccess: () => {
+            //Refetch
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+        },
+    })
+
 
     console.log(events)
 
@@ -119,32 +133,14 @@ const EventsListPage = () => {
         // Simulate API call
         console.log(`Editing event ${eventId}:`, eventData);
 
-        const dataToUpdate = {
-            ...eventData,
-            eventId: eventId
-        }
-
-        updateMutation.mutate(dataToUpdate)
-
-        // setEvents(prevEvents =>
-        //     prevEvents.map(event =>
-        //         event.id === eventId
-        //             ? {
-        //                 ...event,
-        //                 name: eventData.name,
-        //                 description: eventData.description,
-        //                 date: eventData.date ? new Date(eventData.date) : event.date,
-        //                 time: eventData.time ? new Date(`2024-01-01T${eventData.time}:00`) : event.time,
-        //                 requirements: eventData.requirements,
-        //                 maxParticipants: eventData.maxParticipants ? parseInt(eventData.maxParticipants) : event.maxParticipants,
-        //                 industry: eventData.industry,
-        //                 level: eventData.level,
-        //                 imgUrl: eventData.imgUrl
-        //             }
-        //             : event
-        //     )
-        // );
+        updateMutation.mutate({ eventId: eventId, eventData: eventData })
     };
+
+    const handleDeleteEvent = async (eventId: string) => {
+        console.log(`Deleting event ${eventId}`)
+
+        deleteMutation.mutate(eventId)
+    }
 
     return (
         <>
@@ -155,6 +151,7 @@ const EventsListPage = () => {
                     onJoinEvent={handleJoinEvent}
                     onCreateEvent={handleCreateEvent}
                     onEditEvent={handleEditEvent}
+                    onDeleteEvent={handleDeleteEvent}
                 />
             }
         </>

@@ -42,7 +42,7 @@ export const auth = betterAuth({
         customSession(async ({ user, session }) => {
             const userWithRole = await prisma.user.findUnique({
                 where: { id: user.id },
-                include: { role: true },
+                include: { role: true, },
             });
             return {
                 user: userWithRole,

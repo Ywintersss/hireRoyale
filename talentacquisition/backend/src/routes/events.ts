@@ -5,7 +5,8 @@ const router = Router()
 
 router.post('/join', joinEvent)
 router.post('/create', createEvent)
-router.post('/update', updateEvent)
+router.put('/update/:eventId', updateEvent)
+router.delete('/delete/:eventId', deleteEvent)
 router.get('/all', getEvents)
 
 export default router

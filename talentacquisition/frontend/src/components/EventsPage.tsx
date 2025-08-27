@@ -8,7 +8,8 @@ const EventsPage: React.FC<EventsPageProps> = ({
     events,
     onJoinEvent,
     onCreateEvent,
-    onEditEvent
+    onEditEvent,
+    onDeleteEvent
 }) => {
     const [filteredEvents, setFilteredEvents] = useState<Event[]>(events || []);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -132,6 +133,18 @@ const EventsPage: React.FC<EventsPageProps> = ({
             setIsLoading(false);
         }
     };
+
+    const handleDeleteEvent = async (eventId: string) => {
+        setIsLoading(true)
+        try {
+            await onDeleteEvent(eventId)
+        } catch (error) {
+            console.error('Error deleting event: ', error)
+        } finally {
+            setIsLoading(false)
+            setIsDetailModalOpen(false)
+        }
+    }
 
     const resetForm = () => {
         setFormData({
@@ -598,6 +611,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                     <Select
                                         label="Industry"
                                         placeholder="Select industry"
+                                        selectedKeys={[formData.industry]}
                                         value={formData.industry}
                                         onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
                                         classNames={{
@@ -615,6 +629,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                     <Select
                                         label="Level"
                                         placeholder="Select level"
+                                        selectedKeys={[formData.level]}
                                         value={formData.level}
                                         onChange={(e) => setFormData({ ...formData, level: e.target.value })}
                                         classNames={{
@@ -820,7 +835,19 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                         </div>
                                     </div>
                                 </ModalBody>
-                                <ModalFooter>
+                                <ModalFooter className={`flex items-center ${selectedEvent.status === 'Pending' && 'justify-between'}`}>
+                                    {selectedEvent.status !== 'Approved' &&
+                                        <Button
+                                            color='danger'
+                                            variant="light"
+                                            onPress={() => {
+                                                handleDeleteEvent(selectedEvent.id)
+                                            }}
+                                            isLoading={isLoading}
+                                        >
+                                            Delete Event
+                                        </Button>
+                                    }
                                     <Button
                                         variant="light"
                                         onPress={() => setIsDetailModalOpen(false)}

@@ -78,21 +78,18 @@ export const updateEvent = async (req: Request, res: Response) => {
         if (!session?.user) {
             return res.status(401).json({ error: "Unauthorized" });
         }
-
-        const userId = session.user.id;
+        const { eventId } = req.params;
         const formData = req.body;
 
         const updateEvent = await prisma.event.update({
             where: {
-                id: formData.eventId,
+                id: eventId as string,
             },
             data: {
                 ...formData,
                 date: new Date(`${formData.date}T00:00:00`),
                 time: new Date(`${formData.date}T${formData.time}:00`),
                 maxParticipants: Number(formData.maxParticipants),
-
-                eventId: undefined
             }
         })
 
@@ -104,7 +101,29 @@ export const updateEvent = async (req: Request, res: Response) => {
     }
 }
 
-export const deleteEvent = (req: Request, res: Response) => {
+export const deleteEvent = async (req: Request, res: Response) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session?.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const { eventId } = req.params
+
+        const status = await prisma.event.delete({
+            where: {
+                id: eventId as string
+            }
+        })
+
+        return res.status(201).json(status)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ error: "Failed to delete event" })
+    }
 
 }
 

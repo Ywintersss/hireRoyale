@@ -88,6 +88,7 @@ export interface EventsPageProps {
     onJoinEvent: (eventId: string) => Promise<void>;
     onCreateEvent: (eventData: any) => Promise<void>;
     onEditEvent: (eventId: string, eventData: any) => Promise<void>;
+    onDeleteEvent: (eventId: string) => Promise<void>;
 }
 
 export interface SidebarProps {
