@@ -16,19 +16,36 @@ model User {
   image         String?
   contact       String?
   password      String?     // for email/password auth (via Account usually)
+  
+  // Enhanced profile fields
+  location      String?     // User's location
+  bio           String?     // User biography/description
+  experience    String?     // Years of experience for job seekers
+  skills        String?     // JSON array of skills for job seekers
+  company       String?     // Company name for recruiters
+  position      String?     // Job position/title for recruiters
+  industry      String?     // Industry focus
+  rating        Float?      @default(0.0) // User rating (0-5)
+  isOnline      Boolean     @default(false) // Online status
+  lastActive    DateTime?   // Last activity timestamp
+  
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-
+  
   // relations
-  sessions      Session[]
-  accounts      Account[]
-  roleId        String?
-  role          Role?       @relation(fields: [roleId], references: [id])
-  resumeId      String?     @unique
-  resume        Resume?     @relation(fields: [resumeId], references: [id])
-  eventsCreated Event[]     @relation("UserEventsCreated")
-  eventsJoined  UserEvent[] @relation("UserEventsJoined")
-
+  sessions          Session[]
+  accounts          Account[]
+  roleId            String?
+  role              Role?             @relation(fields: [roleId], references: [id])
+  resumeId          String?           @unique
+  resume            Resume?           @relation(fields: [resumeId], references: [id])
+  eventsCreated     Event[]           @relation("UserEventsCreated")
+  eventsJoined      UserEvent[]       @relation("UserEventsJoined")
+  
+  // Connection system
+  sentConnections     Connection[]    @relation("ConnectionSender")
+  receivedConnections Connection[]    @relation("ConnectionReceiver")
+  
   @@map("user")
 }
 
@@ -42,7 +59,6 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@map("session")
 }
 
@@ -61,7 +77,6 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
   @@map("account")
 }
 
@@ -72,29 +87,41 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
-
   @@map("verification")
 }
 
-// ---------- ERD MERGE PART ----------
-
+// Enhanced Resume model
 model Resume {
-  id         String  @id @default(cuid())
-  resumeUrl  String
+  id          String  @id @default(cuid())
+  resumeUrl   String
+  fileName    String? // Original filename
+  fileSize    Int?    // File size in bytes
+  
+  // Parsed resume data (more structured)
+  summary     String? // Professional summary
+  workHistory String? // JSON array of work experience
+  education   String? // JSON array of education
+  skills      String? // JSON array of skills
+  
+  // Legacy fields (keep for backward compatibility)
   parsedData1 String?
   parsedData2 String?
   parsedData3 String?
-
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
   // one-to-one with User
   user User?
 }
 
 model Role {
   id          String         @id @default(cuid())
-  name        String        @unique
+  name        String        @unique // 'User', 'Recruiter', 'Admin'
+  displayName String?       // 'Job Seeker', 'Talent Recruiter', 'Administrator'
+  description String?       // Role description
   permissions RolePermission[]
   users       User[]
-
   @@map("role")
 }
 
@@ -103,17 +130,14 @@ model Permission {
   name        String        @unique
   description String?
   roles       RolePermission[]
-
   @@map("permission")
 }
 
 model RolePermission {
   roleId       String
   permissionId String
-
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
   @@id([roleId, permissionId])
   @@map("role_permission")
 }
@@ -124,26 +148,69 @@ model Event {
   description      String?
   date             DateTime?
   time             DateTime?
-  requirements     String?
-  status           String?
+  requirements     String?     // JSON array of requirements
+  status           String?     // 'upcoming', 'active', 'completed', 'cancelled'
   maxParticipants  Int?
   industry         String?
-  level            String?
+  level            String?     // 'Entry', 'Mid', 'Senior', 'All Levels'
   imgUrl           String?
-
+  
+  // Enhanced event fields
+  eventType        String?     // 'networking', 'job_fair', 'workshop', 'interview'
+  location         String?     // Physical or virtual location
+  timezone         String?     // Event timezone
+  tags             String?     // JSON array of event tags
+  
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  
   // relations
   createdById String
   createdBy   User        @relation("UserEventsCreated", fields: [createdById], references: [id])
   participants UserEvent[] @relation("UserEventsJoined")
+  connections  Connection[] @relation("EventConnections")
 }
 
 model UserEvent {
-  userId  String
-  eventId String
-
+  userId       String
+  eventId      String
+  requirements String?     // User-specific requirements for this event
+  joinedAt     DateTime    @default(now())
+  
   user  User  @relation("UserEventsJoined", fields: [userId], references: [id], onDelete: Cascade)
   event Event @relation("UserEventsJoined", fields: [eventId], references: [id], onDelete: Cascade)
-
+  
   @@id([userId, eventId])
   @@map("user_event")
+}
+
+// New Connection model for managing user connections
+model Connection {
+  id          String   @id @default(cuid())
+  
+  // Connection participants
+  senderId    String   // User who initiated the connection
+  receiverId  String   // User who received the connection request
+  
+  // Connection context
+  eventId     String?  // Event where connection was made
+  
+  // Connection details
+  status      String   // 'pending', 'accepted', 'declined', 'blocked'
+  message     String?  // Optional message from sender
+  
+  // Meeting/call details
+  roomId      String?  // Video call room identifier
+  callStatus  String?  // 'not_started', 'active', 'ended'
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  sender      User     @relation("ConnectionSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("ConnectionReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  event       Event?   @relation("EventConnections", fields: [eventId], references: [id])
+  
+  @@unique([senderId, receiverId, eventId]) // Prevent duplicate connections in same event
+  @@map("connection")
 }
