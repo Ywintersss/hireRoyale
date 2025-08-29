@@ -2,6 +2,8 @@ import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGro
 import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Event, EventsPageProps } from "../../types/types";
+import { socket } from "@/lib/socket";
+
 
 const EventsPage: React.FC<EventsPageProps> = ({
     currentUser,
@@ -191,6 +193,88 @@ const EventsPage: React.FC<EventsPageProps> = ({
         return event.participants ? event.participants.filter(p => p.user.role?.name === 'Recruiter').length : 0;
     };
 
+    //Everything below is testing
+
+    useEffect(() => {
+        socket.on('connect', () => {
+            console.log('Connected to socket server');
+        })
+
+        socket.on('user_joined', (socketId: string) => {
+            console.log('User joined:', socketId);
+        })
+        
+        socket.on('user_left', (socketId: string) => {
+            console.log('User left:', socketId);
+        })
+    },[])
+
+    const lobbyMap = new Map();
+
+    const createTempLobby = () => {
+        fetch('http://localhost:8000/events/create-lobby', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                eventId: "cmewuedai0007cdx0qtvzpezh",
+                lobbyName: "Test Lobby"
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Lobby created:', data);
+        })
+        .catch(error => console.error('Error creating lobby:', error));
+    }
+
+    const joinTempLobby = () => {
+        fetch('http://localhost:8000/lobby/join-lobby', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                eventId: "cmewuedai0007cdx0qtvzpezh",
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Lobby found:', data);
+            
+            if (data.connection) {
+                console.log('Lobby ID:', data.connection.lobbyId);
+                const roomId = data.connection.lobbyId
+                lobbyMap.set("Lobby", roomId);
+                socket.emit('join_lobby', roomId);
+            }
+        })
+        .catch(error => console.error('Error joining lobby:', error));
+    }
+
+    const leaveTempLobby = () => {
+        fetch('http://localhost:8000/lobby/leave-lobby', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    lobbyId: lobbyMap.get("Lobby"),
+                })
+            }
+        )
+        .then(response => response.json())
+        .then(data => {
+            console.log('Lobby left:', data);
+            socket.emit('leave_lobby', lobbyMap.get("Lobby"));
+        })
+        .catch(error => console.error('Error leaving lobby:', error));
+    }
+            
+
     return (
         <div className="min-h-screen w-full bg-gray-50 p-6">
             <div className="w-full mx-auto">
@@ -207,6 +291,28 @@ const EventsPage: React.FC<EventsPageProps> = ({
                             }
                         </p>
                     </div>
+
+                    <Button
+                        startContent={<Plus className="h-4 w-4" />}
+                        className="bg-brand-teal text-white font-semibold"
+                        onPress={() => createTempLobby()}
+                    >
+                        Create Lobby
+                    </Button>
+                    <Button
+                        startContent={<Plus className="h-4 w-4" />}
+                        className="bg-brand-teal text-white font-semibold"
+                        onPress={() => joinTempLobby()}
+                    >
+                        Join Lobby
+                    </Button>
+                    <Button
+                        startContent={<Plus className="h-4 w-4" />}
+                        className="bg-brand-teal text-white font-semibold"
+                        onPress={() => leaveTempLobby()}
+                    >
+                        Leave Lobby
+                    </Button>
 
                     <div className="flex items-center gap-3">
                         {/* Filter Dropdown */}

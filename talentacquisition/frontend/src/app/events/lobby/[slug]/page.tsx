@@ -216,6 +216,10 @@ const EventLobby = () => {
         onOpen();
     };
 
+    const handleJoinLobby = async () => {
+
+    }
+
     const renderUserCard = (user: UserProfile, isExpanded: boolean) => (
         <Card key={user.id} className="mb-3">
             <CardBody className="p-3">

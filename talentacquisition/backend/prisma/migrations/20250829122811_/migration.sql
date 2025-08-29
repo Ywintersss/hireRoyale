@@ -7,6 +7,16 @@ CREATE TABLE "user" (
     "image" TEXT,
     "contact" TEXT,
     "password" TEXT,
+    "location" TEXT,
+    "bio" TEXT,
+    "experience" TEXT,
+    "skills" TEXT,
+    "company" TEXT,
+    "position" TEXT,
+    "industry" TEXT,
+    "rating" REAL DEFAULT 0.0,
+    "isOnline" BOOLEAN NOT NULL DEFAULT false,
+    "lastActive" DATETIME,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     "roleId" TEXT,
@@ -60,9 +70,17 @@ CREATE TABLE "verification" (
 CREATE TABLE "Resume" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "resumeUrl" TEXT NOT NULL,
+    "fileName" TEXT,
+    "fileSize" INTEGER,
+    "summary" TEXT,
+    "workHistory" TEXT,
+    "education" TEXT,
+    "skills" TEXT,
     "parsedData1" TEXT,
     "parsedData2" TEXT,
-    "parsedData3" TEXT
+    "parsedData3" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
 );
 
 -- CreateTable
@@ -101,6 +119,12 @@ CREATE TABLE "Event" (
     "industry" TEXT,
     "level" TEXT,
     "imgUrl" TEXT,
+    "eventType" TEXT,
+    "location" TEXT,
+    "timezone" TEXT,
+    "tags" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     "createdById" TEXT NOT NULL,
     CONSTRAINT "Event_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -109,10 +133,47 @@ CREATE TABLE "Event" (
 CREATE TABLE "user_event" (
     "userId" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
+    "requirements" TEXT,
+    "joinedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY ("userId", "eventId"),
     CONSTRAINT "user_event_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "user_event_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "connection" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "senderId" TEXT NOT NULL,
+    "receiverId" TEXT NOT NULL,
+    "eventId" TEXT,
+    "status" TEXT NOT NULL,
+    "message" TEXT,
+    "roomId" TEXT,
+    "callStatus" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "connection_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "connection_receiverId_fkey" FOREIGN KEY ("receiverId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "connection_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "EventConnection" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "lobbyId" TEXT NOT NULL,
+    "joinedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "EventConnection_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "EventConnection_lobbyId_fkey" FOREIGN KEY ("lobbyId") REFERENCES "Lobby" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "Lobby" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    CONSTRAINT "Lobby_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateIndex
@@ -123,3 +184,15 @@ CREATE UNIQUE INDEX "user_resumeId_key" ON "user"("resumeId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "session_token_key" ON "session"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "role_name_key" ON "role"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "permission_name_key" ON "permission"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "connection_senderId_receiverId_eventId_key" ON "connection"("senderId", "receiverId", "eventId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EventConnection_userId_lobbyId_key" ON "EventConnection"("userId", "lobbyId");

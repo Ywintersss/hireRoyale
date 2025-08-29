@@ -182,3 +182,19 @@ export const leaveEvent = async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to leave event" })
     }
 }
+
+//temporary
+export const createEventLobby = async (req: Request, res: Response) => {
+    const { eventId, lobbyName } = req.body;
+
+    // create lobby for the event
+    const lobby = await prisma.lobby.create({
+        data: {
+            name: lobbyName,
+            eventId: eventId
+        }
+    });
+
+
+    return res.status(201).json(lobby);
+}

@@ -46,6 +46,8 @@ model User {
   sentConnections     Connection[]    @relation("ConnectionSender")
   receivedConnections Connection[]    @relation("ConnectionReceiver")
   
+  liveConnections EventConnection[]
+
   @@map("user")
 }
 
@@ -118,8 +120,8 @@ model Resume {
 model Role {
   id          String         @id @default(cuid())
   name        String        @unique // 'User', 'Recruiter', 'Admin'
-  displayName String?       // 'Job Seeker', 'Talent Recruiter', 'Administrator'
-  description String?       // Role description
+  // displayName String?       // 'Job Seeker', 'Talent Recruiter', 'Administrator'
+  // description String?       // Role description
   permissions RolePermission[]
   users       User[]
   @@map("role")
@@ -169,6 +171,7 @@ model Event {
   createdBy   User        @relation("UserEventsCreated", fields: [createdById], references: [id])
   participants UserEvent[] @relation("UserEventsJoined")
   connections  Connection[] @relation("EventConnections")
+  lobbies   Lobby[]
 }
 
 model UserEvent {
@@ -213,4 +216,24 @@ model Connection {
   
   @@unique([senderId, receiverId, eventId]) // Prevent duplicate connections in same event
   @@map("connection")
+}
+
+model EventConnection {
+  id      String @id @default(cuid())
+  userId  String
+  lobbyId String
+  joinedAt DateTime @default(now())
+
+  user   User  @relation(fields: [userId], references: [id])
+  lobby  Lobby @relation(fields: [lobbyId], references: [id])
+  @@unique([userId, lobbyId])
+}
+
+model Lobby {
+  id        String   @id @default(cuid())
+  name      String
+  eventId   String   @unique
+
+  event     Event     @relation(fields: [eventId], references: [id])
+  users     EventConnection[]
 }
