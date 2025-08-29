@@ -28,10 +28,19 @@ export interface User {
     email: string;
     emailVerified: boolean;
     name: string;
+    contact: string;
     createdAt: Date;
     updatedAt: Date;
     image?: string | null | undefined;
+    location?: string;
+    experience?: string;
+    skills?: string[];
+    company?: string;
+    position?: string;
+    industry?: string;
+    rating?: number;
     role: Role
+    isOnline?: boolean
 }
 
 export interface Role {
@@ -90,6 +99,7 @@ export interface EventsPageProps {
     onEditEvent: (eventId: string, eventData: any) => Promise<void>;
     onDeleteEvent: (eventId: string) => Promise<void>;
     onLeaveEvent: (eventId: string) => Promise<void>
+    onCreateJobRequirement: (eventId: string, data: JobRequirementRegistrationData) => Promise<void>
 }
 
 export interface SidebarProps {
@@ -106,4 +116,32 @@ export interface NavItem {
     href: string;
     badge?: number;
     color?: 'primary' | 'secondary' | 'default';
+}
+
+export interface JobRequirementData {
+    id: string,
+    title: string;
+    description: string;
+    experienceLevel: string;
+    requiredSkills: string;
+    location: string;
+    employmentType: string;
+    salaryRange: string;
+    department: string;
+    isRemoteOk: boolean;
+    userId: string;
+    eventId: string;
+}
+
+
+export interface JobRequirementRegistrationData {
+    title: string;
+    description: string;
+    experienceLevel: string;
+    requiredSkills: string[];
+    location: string;
+    employmentType: string;
+    salaryRange: string;
+    department: string;
+    isRemoteOk: boolean;
 }

@@ -33,6 +33,7 @@ model User {
   updatedAt     DateTime    @updatedAt
   
   // relations
+  jobRequirements JobRequirement[]
   sessions          Session[]
   accounts          Account[]
   roleId            String?
@@ -171,6 +172,7 @@ model Event {
   createdBy   User        @relation("UserEventsCreated", fields: [createdById], references: [id])
   participants UserEvent[] @relation("UserEventsJoined")
   connections  Connection[] @relation("EventConnections")
+  jobRequirements JobRequirement[]
   lobbies   Lobby[]
 }
 
@@ -236,4 +238,29 @@ model Lobby {
 
   event     Event     @relation(fields: [eventId], references: [id])
   users     EventConnection[]
+}
+
+model JobRequirement {
+  id             String   @id @default(cuid())
+  title          String
+  description    String
+  experienceLevel String
+  requiredSkills String   
+  location       String
+  employmentType String
+  salaryRange    String
+  department     String
+  isRemoteOk     Boolean  @default(false)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // relations
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@map("job_requirement")
 }

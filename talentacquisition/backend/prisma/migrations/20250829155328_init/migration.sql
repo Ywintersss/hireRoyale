@@ -176,6 +176,26 @@ CREATE TABLE "Lobby" (
     CONSTRAINT "Lobby_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
+-- CreateTable
+CREATE TABLE "job_requirement" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "title" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "experienceLevel" TEXT NOT NULL,
+    "requiredSkills" TEXT NOT NULL,
+    "location" TEXT NOT NULL,
+    "employmentType" TEXT NOT NULL,
+    "salaryRange" TEXT NOT NULL,
+    "department" TEXT NOT NULL,
+    "isRemoteOk" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    "userId" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    CONSTRAINT "job_requirement_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "job_requirement_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
@@ -196,3 +216,6 @@ CREATE UNIQUE INDEX "connection_senderId_receiverId_eventId_key" ON "connection"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EventConnection_userId_lobbyId_key" ON "EventConnection"("userId", "lobbyId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Lobby_eventId_key" ON "Lobby"("eventId");

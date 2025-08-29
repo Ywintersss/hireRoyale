@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { usePathname, useRouter } from 'next/navigation';
-import { Event, EventRegistration } from '../../../types/types';
+import { Event, EventRegistration, JobRequirementRegistrationData } from '../../../types/types';
 import EventsPage from '@/components/EventsPage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -95,6 +95,23 @@ const EventsListPage = () => {
         },
     })
 
+    const jobPostingMutation = useMutation({
+        mutationFn: async ({ eventId, data }: { eventId: string, data: JobRequirementRegistrationData }) => {
+            return fetch(`http://localhost:8000/events/job/${eventId}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+        },
+        onSuccess: () => {
+            alert('Job posting added!')
+        },
+    })
+
+
     const handleJoinEvent = async (eventId: string) => {
         if (!currentUser?.user) {
             router.push('/auth/login')
@@ -158,6 +175,13 @@ const EventsListPage = () => {
         leaveMutation.mutate(eventId)
     }
 
+    const handleCreateJobRequirement = async (eventId: string, data: JobRequirementRegistrationData) => {
+        jobPostingMutation.mutate({
+            eventId: eventId,
+            data: data
+        })
+    }
+
     return (
         <>
             {!isLoading &&
@@ -169,6 +193,7 @@ const EventsListPage = () => {
                     onEditEvent={handleEditEvent}
                     onDeleteEvent={handleDeleteEvent}
                     onLeaveEvent={handleLeaveEvent}
+                    onCreateJobRequirement={handleCreateJobRequirement}
                 />
             }
         </>

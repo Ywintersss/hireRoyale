@@ -176,6 +176,12 @@ export const leaveEvent = async (req: Request, res: Response) => {
             }
         })
 
+        await prisma.jobRequirement.deleteMany({
+            where: {
+                userId: userId
+            }
+        })
+
         return res.status(201).json(status)
     } catch (error) {
         console.log(error)
@@ -197,4 +203,66 @@ export const createEventLobby = async (req: Request, res: Response) => {
 
 
     return res.status(201).json(lobby);
+}
+
+export const getOneEvent = async (req: Request, res: Response) => {
+    const { eventId } = req.params
+    const events = await prisma.event.findFirst({
+        include: {
+            participants: {
+                include: {
+                    user: {
+                        include: {
+                            role: true
+                        }
+                    }
+                }
+            },
+            createdBy: true
+        },
+        where: {
+            id: eventId as string
+        }
+    })
+    res.json(events)
+}
+
+export const createJobPosting = async (req: Request, res: Response) => {
+    try {
+        const session = await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+
+        if (!session?.user) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const userId = session.user.id;
+        const { eventId } = req.params
+        const data = req.body
+
+        const posting = await prisma.jobRequirement.create({
+            data: {
+                ...data,
+                requiredSkills: data.requiredSkills.join(','),
+                eventId: eventId,
+                userId: userId
+            }
+        })
+
+        return res.status(201).json(posting)
+    } catch (error) {
+        res.status(500).json({ error: "Failed to add job posting" })
+    }
+}
+
+export const getJobs = async (req: Request, res: Response) => {
+    try {
+        const jobs = await prisma.jobRequirement.findMany()
+
+        return res.status(201).json(jobs)
+    } catch (error) {
+        res.status(500).json({ error: "Failed to add job posting" })
+    }
+
 }
