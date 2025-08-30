@@ -200,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Sidebar */}
             <div
                 className={`
-                    fixed top-0 left-0 h-screen max-h-[100dvh] bg-white shadow-2xl z-50 transition-all duration-300 ease-in-out
+                    fixed top-0 left-0 h-full min-h-[100dvh] bg-white shadow-2xl z-50 transition-all duration-300 ease-in-out
                     ${isOpen ? 'w-64' : 'w-16'}
                     ${isOpen ? 'translate-x-0' : '-translate-x-0'}
                     lg:relative lg:translate-x-0

@@ -37,7 +37,7 @@ export default function RootLayout({
             >
                 <Providers>
                     {(currentPath !== '/auth/login' && currentPath !== '/auth/register') ?
-                        <div className='flex h-screen bg-gray-50'>
+                        <div className='flex w-full min-h-screen bg-gray-50'>
                             <Sidebar
                                 isOpen={sidebarOpen}
                                 onToggle={() => setSidebarOpen(!sidebarOpen)}
