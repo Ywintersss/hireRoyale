@@ -13,13 +13,14 @@ import {
     RadioGroup,
     Radio,
 } from "@heroui/react";
-import { Eye, EyeOff, User, Mail, Lock, Phone, Users, Briefcase } from 'lucide-react';
-import { RegistrationErrorSchema, RegistrationFormSchema } from '../../../../types/types';
+import { Eye, EyeOff, Mail, Lock, User, Building, Github, Phone, Users, Briefcase, Sparkles, Shield, Zap, CheckCircle } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { redirect, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import { RegistrationFormSchema, RegistrationErrorSchema } from '../../../../types/types';
 
-const RegistrationPage = () => {
-    const router = useRouter()
+const RegisterPage = () => {
     const [formData, setFormData] = useState<RegistrationFormSchema>({
         firstName: '',
         lastName: '',
@@ -27,6 +28,7 @@ const RegistrationPage = () => {
         phone: '',
         password: '',
         confirmPassword: '',
+        company: '',
         agreeToTerms: false,
         subscribeNewsletter: false,
         role: 'user' // Default selection
@@ -36,411 +38,748 @@ const RegistrationPage = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState<RegistrationErrorSchema>({});
     const [isLoading, setIsLoading] = useState(false);
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const [isGithubLoading, setIsGithubLoading] = useState(false);
+    const router = useRouter()
 
     const validateForm = () => {
         const newErrors: RegistrationErrorSchema = {};
 
-        if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-        if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+        if (!formData.firstName.trim()) {
+            newErrors.firstName = 'First name is required';
+        }
+        if (!formData.lastName.trim()) {
+            newErrors.lastName = 'Last name is required';
+        }
         if (!formData.email.trim()) {
             newErrors.email = 'Email is required';
         } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
             newErrors.email = 'Email is invalid';
         }
-        if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+        if (!formData.phone.trim()) {
+            newErrors.phone = 'Phone number is required';
+        }
         if (!formData.password) {
             newErrors.password = 'Password is required';
         } else if (formData.password.length < 8) {
             newErrors.password = 'Password must be at least 8 characters';
         }
-        if (formData.password !== formData.confirmPassword) {
+        if (!formData.confirmPassword) {
+            newErrors.confirmPassword = 'Please confirm your password';
+        } else if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
         }
-        if (!formData.agreeToTerms) newErrors.agreeToTerms = 'You must agree to the terms';
-        if (!formData.role) newErrors.role = 'Please select account type';
+        if (!formData.company.trim()) {
+            newErrors.company = 'Company name is required';
+        }
+        if (!formData.agreeToTerms) {
+            newErrors.agreeToTerms = 'You must agree to the terms and conditions';
+        }
+        if (!formData.role) {
+            newErrors.role = 'Please select account type';
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async () => {
+    const handleEmailRegister = async () => {
         if (!validateForm()) return;
 
         setIsLoading(true);
-        const name = `${formData.firstName} ${formData.lastName}`
-        const { data, error } = await authClient.signUp.email(
-            {
+        setErrors({});
+
+        try {
+            const { data, error } = await authClient.signUp.email({
                 email: formData.email,
                 password: formData.password,
-                name: name,
-                roleName: formData.role.charAt(0).toUpperCase() + formData.role.slice(1),
-                contact: formData.phone,
-                callbackURL: "/",
-            },
-            {
-                onRequest: (ctx) => {
+                name: `${formData.firstName} ${formData.lastName}`,
+                callbackURL: "/"
+            });
 
-                },
-                onSuccess: (ctx) => {
-                    setIsLoading(false);
-                    router.push('/');
-                    alert(`Registration successful as ${formData.role}! (This is a demo)`);
-                },
-                onError: (ctx) => {
-                    setIsLoading(false);
-                    alert(ctx.error.message)
-                }
+            if (error) {
+                setErrors({ general: error.message || 'Registration failed. Please try again.' });
+            } else {
+                // Redirect to verification page or dashboard
+                router.push('/auth/verify-email');
             }
-        )
-
-    };
-
-    const handleInputChange = (field: keyof RegistrationErrorSchema, value: string | boolean) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: '' }));
+        } catch (error) {
+            setErrors({ general: 'An unexpected error occurred. Please try again.' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    const handleGoogleRegister = async () => {
+        setIsGoogleLoading(true);
+        setErrors({});
+
+        try {
+            // Note: Social signup methods may not be available in your auth client
+            // You may need to implement these separately or use a different approach
+            setErrors({ general: 'Google signup is not available yet. Please use email registration.' });
+        } catch (error) {
+            setErrors({ general: 'An unexpected error occurred. Please try again.' });
+        } finally {
+            setIsGoogleLoading(false);
+        }
+    };
+
+    const handleGithubRegister = async () => {
+        setIsGithubLoading(true);
+        setErrors({});
+
+        try {
+            // Note: Social signup methods may not be available in your auth client
+            // You may need to implement these separately or use a different approach
+            setErrors({ general: 'GitHub signup is not available yet. Please use email registration.' });
+        } catch (error) {
+            setErrors({ general: 'An unexpected error occurred. Please try again.' });
+        } finally {
+            setIsGithubLoading(false);
+        }
+    };
+
+    const handleInputChange = (field: keyof RegistrationFormSchema, value: string | boolean) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (errors[field as keyof RegistrationErrorSchema]) {
+            setErrors(prev => ({ ...prev, [field as keyof RegistrationErrorSchema]: '' }));
+        }
+        if (errors.general) {
+            setErrors(prev => ({ ...prev, general: '' }));
+        }
+    };
+
+    const passwordStrength = (password: string) => {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[^A-Za-z0-9]/.test(password)) score++;
+        return score;
+    };
+
+    const getPasswordStrengthColor = (strength: number) => {
+        if (strength <= 2) return 'text-red-500';
+        if (strength <= 3) return 'text-yellow-500';
+        if (strength <= 4) return 'text-blue-500';
+        return 'text-green-500';
+    };
+
+    const getPasswordStrengthText = (strength: number) => {
+        if (strength <= 2) return 'Weak';
+        if (strength <= 3) return 'Fair';
+        if (strength <= 4) return 'Good';
+        return 'Strong';
+    };
+
     return (
-        <div
-            className="min-h-screen flex items-center justify-center p-4"
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
             style={{
-                background: 'linear-gradient(135deg, #1E3A8A 0%, #0EA5E9 50%, #F97316 100%)',
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 25%, #0EA5E9 50%, #F97316 75%, #DC2626 100%)',
             }}
         >
-            <div className="w-full max-w-md">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <motion.div
+                    className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.6, 0.3],
+                    }}
+                    transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                />
+                <motion.div
+                    className="absolute top-40 right-20 w-24 h-24 bg-cyan-500/10 rounded-full blur-3xl"
+                    animate={{
+                        scale: [1.2, 1, 1.2],
+                        opacity: [0.4, 0.7, 0.4],
+                    }}
+                    transition={{
+                        duration: 5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1
+                    }}
+                />
+                <motion.div
+                    className="absolute bottom-20 left-1/3 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl"
+                    animate={{
+                        scale: [1, 1.3, 1],
+                        opacity: [0.2, 0.5, 0.2],
+                    }}
+                    transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 2
+                    }}
+                />
+            </div>
+
+            <div className="w-full max-w-lg relative z-10">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <h1
-                        className="text-white text-3xl font-bold mb-2"
+                <motion.div 
+                    className="text-center mb-8"
+                    initial={{ opacity: 0, y: -30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                >
+                    <motion.div
+                        className="inline-flex items-center gap-2 mb-4"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2, duration: 0.6 }}
                     >
-                        Join Our Platform
-                    </h1>
-                    <p
-                        className="text-white text-lg opacity-90"
-                    >
-                        Create your account to get started
-                    </p>
-                </div>
-
-                {/* Registration Card */}
-                <Card className="bg-white w-full shadow-2xl">
-                    <CardHeader className="flex flex-col gap-3 pb-0">
-                        <div className="flex flex-col items-center">
-                            <h2
-                                className="text-brand-blue text-2xl font-semibold text-center"
-                            >
-                                Create Account
-                            </h2>
-                            <p
-                                className="text-muted text-sm text-center mt-1"
-                            >
-                                Fill in your details to register
-                            </p>
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+                            <Sparkles className="h-5 w-5 text-white" />
                         </div>
-                    </CardHeader>
+                        <span className="text-white text-lg font-semibold">HireRoyale</span>
+                    </motion.div>
+                    
+                    <motion.h1
+                        className="text-white text-3xl sm:text-4xl font-bold mb-3"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4, duration: 0.6 }}
+                    >
+                        Join the Revolution
+                    </motion.h1>
+                    
+                    <motion.p
+                        className="text-white/80 text-lg sm:text-xl"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6, duration: 0.6 }}
+                    >
+                        Create your account and transform your hiring process
+                    </motion.p>
+                </motion.div>
 
-                    <Divider className='bg-brand-blue h-[2px]' />
-
-                    <CardBody className="gap-4 pt-6">
-                        <div className="flex flex-col gap-4">
-                            {/* Account Type Selection */}
-                            <div className="flex flex-col gap-2">
-                                <label className="text-brand-blue font-medium text-sm">
-                                    Account Type
-                                </label>
-                                <RadioGroup
-                                    value={formData.role}
-                                    onValueChange={(value) => handleInputChange('role', value)}
-                                    orientation="horizontal"
-                                    classNames={{
-                                        base: "flex gap-4",
-                                    }}
+                {/* Register Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 0.8, duration: 0.8, type: "spring" }}
+                >
+                    <Card className="bg-white/95 backdrop-blur-xl w-full shadow-2xl border-0 overflow-hidden">
+                        <CardHeader className="flex flex-col gap-3 pb-0 bg-gradient-to-r from-blue-50 to-cyan-50">
+                            <div className="flex flex-col items-center">
+                                <motion.div
+                                    className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl mb-4 shadow-lg"
+                                    whileHover={{ scale: 1.05, rotate: 5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
                                 >
-                                    <Radio
-                                        value="user"
+                                    <CheckCircle className="h-8 w-8 text-white" />
+                                </motion.div>
+                                <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent text-center">
+                                    Create Account
+                                </h2>
+                                <p className="text-gray-600 text-center mt-2 text-sm sm:text-base">
+                                    Start your journey with HireRoyale
+                                </p>
+                            </div>
+                        </CardHeader>
+
+                        <Divider className="bg-gradient-to-r from-blue-500 to-cyan-500 h-[2px]" />
+
+                        <CardBody className="gap-4 pt-6 px-6 sm:px-8">
+                            <div className="flex flex-col gap-4">
+                                {/* General Error Message */}
+                                <AnimatePresence>
+                                    {errors.general && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm backdrop-blur-sm"
+                                        >
+                                            {errors.general}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Account Type Selection */}
+                                <motion.div 
+                                    className="flex flex-col gap-2"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.9, duration: 0.6 }}
+                                >
+                                    <label className="text-blue-600 font-semibold text-sm">
+                                        Account Type
+                                    </label>
+                                    <RadioGroup
+                                        value={formData.role}
+                                        onValueChange={(value) => handleInputChange('role', value)}
+                                        orientation="horizontal"
                                         classNames={{
-                                            base: "inline-flex m-0 bg-[#EEF2FF] hover:bg-[#E0E7FF] items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-brand-teal",
-                                            control: "text-brand-teal",
+                                            base: "flex gap-4",
                                         }}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4 text-brand-blue" />
-                                            <div className="flex flex-col">
-                                                <span className="text-brand-blue font-medium">Job Seeker</span>
-                                                <span className="text-xs text-gray-500">Looking for opportunities</span>
+                                        <Radio
+                                            value="user"
+                                            classNames={{
+                                                base: "inline-flex m-0 bg-blue-50 hover:bg-blue-100 items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-blue-500",
+                                                control: "text-blue-500",
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4 text-blue-600" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-blue-600 font-medium">Job Seeker</span>
+                                                    <span className="text-xs text-gray-500">Looking for opportunities</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </Radio>
-                                    <Radio
-                                        value="recruiter"
+                                        </Radio>
+                                        <Radio
+                                            value="recruiter"
+                                            classNames={{
+                                                base: "inline-flex m-0 bg-cyan-50 hover:bg-cyan-100 items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-cyan-500",
+                                                control: "text-cyan-500",
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Briefcase className="h-4 w-4 text-cyan-600" />
+                                                <div className="flex flex-col">
+                                                    <span className="text-cyan-600 font-medium">Recruiter</span>
+                                                    <span className="text-xs text-gray-500">Hiring talent</span>
+                                                </div>
+                                            </div>
+                                        </Radio>
+                                    </RadioGroup>
+                                    {errors.role && (
+                                        <p className="text-red-600 text-xs mt-1">{errors.role}</p>
+                                    )}
+                                </motion.div>
+
+                                {/* Name Fields */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 1.0, duration: 0.6 }}
+                                    >
+                                        <Input
+                                            type="text"
+                                            label="First Name"
+                                            placeholder="Enter first name"
+                                            value={formData.firstName}
+                                            onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                            isInvalid={!!errors.firstName}
+                                            errorMessage={errors.firstName}
+                                            startContent={<User className="h-4 w-4 text-blue-500" />}
+                                            classNames={{
+                                                label: 'text-blue-600 font-semibold',
+                                                input: 'text-gray-900 placeholder:text-gray-400',
+                                                inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                                errorMessage: 'text-red-600 text-sm'
+                                            }}
+                                        />
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 1.1, duration: 0.6 }}
+                                    >
+                                        <Input
+                                            type="text"
+                                            label="Last Name"
+                                            placeholder="Enter last name"
+                                            value={formData.lastName}
+                                            onChange={(e) => handleInputChange('lastName', e.target.value)}
+                                            isInvalid={!!errors.lastName}
+                                            errorMessage={errors.lastName}
+                                            startContent={<User className="h-4 w-4 text-blue-500" />}
+                                            classNames={{
+                                                label: 'text-blue-600 font-semibold',
+                                                input: 'text-gray-900 placeholder:text-gray-400',
+                                                inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                                errorMessage: 'text-red-600 text-sm'
+                                            }}
+                                        />
+                                    </motion.div>
+                                </div>
+
+                                {/* Company */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.2, duration: 0.6 }}
+                                >
+                                    <Input
+                                        type="text"
+                                        label="Company Name"
+                                        placeholder="Enter company name"
+                                        value={formData.company}
+                                        onChange={(e) => handleInputChange('company', e.target.value)}
+                                        isInvalid={!!errors.company}
+                                        errorMessage={errors.company}
+                                        startContent={<Building className="h-4 w-4 text-blue-500" />}
                                         classNames={{
-                                            base: "inline-flex m-0 bg-[#F0F9FF] hover:bg-[#E0F7FA] items-center justify-between flex-row-reverse max-w-full cursor-pointer rounded-lg gap-4 p-4 border-2 border-transparent data-[selected=true]:border-brand-orange",
-                                            control: "text-brand-orange",
+                                            label: 'text-blue-600 font-semibold',
+                                            input: 'text-gray-900 placeholder:text-gray-400',
+                                            inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                            errorMessage: 'text-red-600 text-sm'
                                         }}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Briefcase className="h-4 w-4 text-brand-teal" />
-                                            <div className="flex flex-col">
-                                                <span className="text-brand-teal font-medium">Recruiter</span>
-                                                <span className="text-xs text-gray-500">Hiring talent</span>
+                                    />
+                                </motion.div>
+
+                                {/* Email */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.3, duration: 0.6 }}
+                                >
+                                    <Input
+                                        type="email"
+                                        label="Email Address"
+                                        placeholder="Enter your email"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                        isInvalid={!!errors.email}
+                                        errorMessage={errors.email}
+                                        startContent={<Mail className="h-4 w-4 text-blue-500" />}
+                                        classNames={{
+                                            label: 'text-blue-600 font-semibold',
+                                            input: 'text-gray-900 placeholder:text-gray-400',
+                                            inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                            errorMessage: 'text-red-600 text-sm'
+                                        }}
+                                    />
+                                </motion.div>
+
+                                {/* Phone */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.4, duration: 0.6 }}
+                                >
+                                    <Input
+                                        type="tel"
+                                        label="Phone Number"
+                                        placeholder="Enter your phone number"
+                                        value={formData.phone}
+                                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                                        isInvalid={!!errors.phone}
+                                        errorMessage={errors.phone}
+                                        startContent={<Phone className="h-4 w-4 text-blue-500" />}
+                                        classNames={{
+                                            label: 'text-blue-600 font-semibold',
+                                            input: 'text-gray-900 placeholder:text-gray-400',
+                                            inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                            errorMessage: 'text-red-600 text-sm'
+                                        }}
+                                    />
+                                </motion.div>
+
+                                {/* Password */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.5, duration: 0.6 }}
+                                >
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        label="Password"
+                                        placeholder="Create a strong password"
+                                        value={formData.password}
+                                        onChange={(e) => handleInputChange('password', e.target.value)}
+                                        isInvalid={!!errors.password}
+                                        errorMessage={errors.password}
+                                        startContent={<Lock className="h-4 w-4 text-blue-500" />}
+                                        endContent={
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="focus:outline-none hover:text-blue-500 transition-colors duration-200"
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="h-4 w-4 text-gray-400" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 text-gray-400" />
+                                                )}
+                                            </button>
+                                        }
+                                        classNames={{
+                                            label: 'text-blue-600 font-semibold',
+                                            input: 'text-gray-900 placeholder:text-gray-400',
+                                            inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                            errorMessage: 'text-red-600 text-sm'
+                                        }}
+                                    />
+                                    {formData.password && (
+                                        <div className="mt-2">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-gray-600">Password strength:</span>
+                                                <span className={`font-medium ${getPasswordStrengthColor(passwordStrength(formData.password))}`}>
+                                                    {getPasswordStrengthText(passwordStrength(formData.password))}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                                                <div 
+                                                    className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor(passwordStrength(formData.password)).replace('text-', 'bg-')}`}
+                                                    style={{ width: `${(passwordStrength(formData.password) / 5) * 100}%` }}
+                                                />
                                             </div>
                                         </div>
-                                    </Radio>
-                                </RadioGroup>
-                                {errors.role && (
-                                    <p className="text-red-500 text-xs">{errors.role}</p>
-                                )}
-                            </div>
+                                    )}
+                                </motion.div>
 
-                            {/* Name Fields */}
-                            <div className="flex gap-2">
-                                <Input
-                                    label="First Name"
-                                    placeholder="Enter your first name"
-                                    value={formData.firstName}
-                                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                    isInvalid={!!errors.firstName}
-                                    errorMessage={errors.firstName}
-                                    startContent={<User className="h-4 w-4 text-brand-blue" />}
-                                    classNames={{
-                                        label: 'text-brand-blue font-medium',
-                                        input: 'text-gray-900',
-                                        inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                    }}
-                                />
-                                <Input
-                                    label="Last Name"
-                                    placeholder="Enter your last name"
-                                    value={formData.lastName}
-                                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                    isInvalid={!!errors.lastName}
-                                    errorMessage={errors.lastName}
-                                    classNames={{
-                                        label: 'text-brand-blue font-medium',
-                                        input: 'text-gray-900',
-                                        inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                    }}
-                                />
-                            </div>
-
-                            {/* Email */}
-                            <Input
-                                type="email"
-                                label="Email Address"
-                                placeholder="Enter your email"
-                                value={formData.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
-                                isInvalid={!!errors.email}
-                                errorMessage={errors.email}
-                                startContent={<Mail className="h-4 w-4 text-brand-blue" />}
-                                classNames={{
-                                    label: 'text-[#1E3A8A] font-medium',
-                                    input: 'text-gray-900',
-                                    inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                }}
-                            />
-
-                            {/* Phone */}
-                            <Input
-                                type="tel"
-                                label="Phone Number"
-                                placeholder="Enter your phone number"
-                                value={formData.phone}
-                                onChange={(e) => handleInputChange('phone', e.target.value)}
-                                isInvalid={!!errors.phone}
-                                errorMessage={errors.phone}
-                                startContent={<Phone className="h-4 w-4 text-brand-blue" />}
-                                classNames={{
-                                    label: 'text-brand-blue font-medium',
-                                    input: 'text-gray-900',
-                                    inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                }}
-                            />
-
-                            {/* Password */}
-                            <Input
-                                type={showPassword ? "text" : "password"}
-                                label="Password"
-                                placeholder="Enter your password"
-                                value={formData.password}
-                                onChange={(e) => handleInputChange('password', e.target.value)}
-                                isInvalid={!!errors.password}
-                                errorMessage={errors.password}
-                                startContent={<Lock className="h-4 w-4 text-brand-blue" />}
-                                endContent={
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="focus:outline-none"
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4 text-muted" />
-                                        ) : (
-                                            <Eye className="h-4 w-4 text-muted" />
-                                        )}
-                                    </button>
-                                }
-                                classNames={{
-                                    label: 'text-brand-blue font-medium',
-                                    input: 'text-gray-900',
-                                    inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                }}
-                            />
-
-                            {/* Confirm Password */}
-                            <Input
-                                type={showConfirmPassword ? "text" : "password"}
-                                label="Confirm Password"
-                                placeholder="Confirm your password"
-                                value={formData.confirmPassword}
-                                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                isInvalid={!!errors.confirmPassword}
-                                errorMessage={errors.confirmPassword}
-                                startContent={<Lock className="h-4 w-4 text-brand-blue" />}
-                                endContent={
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="focus:outline-none"
-                                    >
-                                        {showConfirmPassword ? (
-                                            <EyeOff className="h-4 w-4 text-muted" />
-                                        ) : (
-                                            <Eye className="h-4 w-4 text-muted" />
-                                        )}
-                                    </button>
-                                }
-                                classNames={{
-                                    label: 'text-brand-blue font-medium',
-                                    input: 'text-gray-900',
-                                    inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
-                                }}
-                            />
-
-                            {/* Checkboxes */}
-                            <div className="flex flex-col gap-2">
-                                <Checkbox
-                                    isSelected={formData.agreeToTerms}
-                                    onValueChange={(checked) => handleInputChange('agreeToTerms', checked)}
-                                    classNames={{
-                                        base: errors.agreeToTerms ? "border-red-500" : "",
-                                        wrapper: "before:border-[#0ea5e9]",
-                                    }}
+                                {/* Confirm Password */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.6, duration: 0.6 }}
                                 >
-                                    <span style={{ color: '#374151' }}>
-                                        I agree to the{' '}
-                                        <Link
-                                            href="#"
-                                            size="sm"
-                                            className="hover:underline text-brand-teal"
-                                        >
-                                            Terms of Service
-                                        </Link>{' '}
-                                        and{' '}
-                                        <Link
-                                            href="#"
-                                            size="sm"
-                                            className="hover:underline text-brand-teal"
-                                        >
-                                            Privacy Policy
-                                        </Link>
-                                    </span>
-                                </Checkbox>
-                                {errors.agreeToTerms && (
-                                    <p className="text-red-500 text-xs ml-6">{errors.agreeToTerms}</p>
-                                )}
+                                    <Input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        label="Confirm Password"
+                                        placeholder="Confirm your password"
+                                        value={formData.confirmPassword}
+                                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                                        isInvalid={!!errors.confirmPassword}
+                                        errorMessage={errors.confirmPassword}
+                                        startContent={<Lock className="h-4 w-4 text-blue-500" />}
+                                        endContent={
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="focus:outline-none hover:text-blue-500 transition-colors duration-200"
+                                            >
+                                                {showConfirmPassword ? (
+                                                    <EyeOff className="h-4 w-4 text-gray-400" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 text-gray-400" />
+                                                )}
+                                            </button>
+                                        }
+                                        classNames={{
+                                            label: 'text-blue-600 font-semibold',
+                                            input: 'text-gray-900 placeholder:text-gray-400',
+                                            inputWrapper: 'border-gray-300 focus-within:border-blue-500 hover:border-blue-400 bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-300',
+                                            errorMessage: 'text-red-600 text-sm'
+                                        }}
+                                    />
+                                </motion.div>
 
-                                <Checkbox
-                                    isSelected={formData.subscribeNewsletter}
-                                    onValueChange={(checked) => handleInputChange('subscribeNewsletter', checked)}
-                                    classNames={{
-                                        wrapper: "before:border-[#f97316]",
-                                    }}
+                                {/* Checkboxes */}
+                                <motion.div 
+                                    className="flex flex-col gap-3"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1.7, duration: 0.6 }}
                                 >
-                                    <span style={{ color: '#374151' }}>
-                                        Subscribe to our newsletter for updates and offers
-                                    </span>
-                                </Checkbox>
+                                    <div className="flex items-start gap-3">
+                                        <Checkbox
+                                            isSelected={formData.agreeToTerms}
+                                            onValueChange={(checked) => handleInputChange('agreeToTerms', checked)}
+                                            classNames={{
+                                                wrapper: "before:border-blue-500 before:bg-blue-500 mt-1",
+                                            }}
+                                        />
+                                        <div className="text-sm text-gray-700">
+                                            <span>I agree to the </span>
+                                            <Link href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                                                Terms of Service
+                                            </Link>
+                                            <span> and </span>
+                                            <Link href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                                                Privacy Policy
+                                            </Link>
+                                            {errors.agreeToTerms && (
+                                                <p className="text-red-600 text-xs mt-1">{errors.agreeToTerms}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <Checkbox
+                                            isSelected={formData.subscribeNewsletter}
+                                            onValueChange={(checked) => handleInputChange('subscribeNewsletter', checked)}
+                                            classNames={{
+                                                wrapper: "before:border-orange-500 before:bg-orange-500 mt-1",
+                                            }}
+                                        />
+                                        <div className="text-sm text-gray-700">
+                                            Subscribe to our newsletter for updates and offers
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                {/* Email Register Button */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1.8, duration: 0.6 }}
+                                >
+                                    <Button
+                                        type="button"
+                                        size="lg"
+                                        isLoading={isLoading}
+                                        onPress={handleEmailRegister}
+                                        className="bg-gradient-to-r from-blue-500 to-cyan-500 w-full font-semibold text-white transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/25 transform hover:scale-[1.02] rounded-xl py-6"
+                                        isDisabled={isGoogleLoading || isGithubLoading}
+                                    >
+                                        {isLoading ? 'Creating Account...' : `Create ${formData.role === 'recruiter' ? 'Recruiter' : 'User'} Account`}
+                                    </Button>
+                                </motion.div>
+
+                                {/* Divider with OR */}
+                                <motion.div 
+                                    className="relative flex items-center justify-center my-6"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 1.9, duration: 0.6 }}
+                                >
+                                    <Divider className="flex-1" />
+                                    <span className="px-4 text-sm text-gray-500 bg-white font-medium">OR</span>
+                                    <Divider className="flex-1" />
+                                </motion.div>
+
+                                {/* Social Register Buttons */}
+                                <div className="flex flex-col gap-3">
+                                    {/* Google Register */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 2.0, duration: 0.6 }}
+                                    >
+                                        <Button
+                                            variant="bordered"
+                                            size="lg"
+                                            isLoading={isGoogleLoading}
+                                            onPress={handleGoogleRegister}
+                                            className="border-gray-300 text-gray-700 w-full font-medium transition-all duration-300 hover:shadow-lg hover:border-gray-400 bg-white/80 backdrop-blur-sm rounded-xl py-6"
+                                            isDisabled={isLoading || isGithubLoading}
+                                            startContent={
+                                                !isGoogleLoading && (
+                                                    <svg className="h-5 w-5" viewBox="0 0 24 24">
+                                                        <path
+                                                            fill="#4285F4"
+                                                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                        />
+                                                        <path
+                                                            fill="#34A853"
+                                                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                        />
+                                                        <path
+                                                            fill="#FBBC05"
+                                                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                                        />
+                                                        <path
+                                                            fill="#EA4335"
+                                                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                        />
+                                                    </svg>
+                                                )
+                                            }
+                                        >
+                                            {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+                                        </Button>
+                                    </motion.div>
+
+                                    {/* GitHub Register */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 2.1, duration: 0.6 }}
+                                    >
+                                        <Button
+                                            variant="bordered"
+                                            size="lg"
+                                            isLoading={isGithubLoading}
+                                            onPress={handleGithubRegister}
+                                            className="border-gray-800 text-gray-800 w-full font-medium transition-all duration-300 hover:shadow-lg hover:bg-gray-50 bg-white/80 backdrop-blur-sm rounded-xl py-6"
+                                            isDisabled={isLoading || isGoogleLoading}
+                                            startContent={
+                                                !isGithubLoading && <Github className="h-5 w-5" />
+                                            }
+                                        >
+                                            {isGithubLoading ? 'Connecting...' : 'Continue with GitHub'}
+                                        </Button>
+                                    </motion.div>
+                                </div>
                             </div>
 
-                            {/* Submit Button */}
-                            <Button
-                                type="button"
-                                size="lg"
-                                isLoading={isLoading}
-                                onPress={handleSubmit}
-                                className="bg-brand-teal w-full font-semibold text-white transition-all duration-200 hover:shadow-lg"
+                            {/* Footer */}
+                            <Divider className="my-6" />
+
+                            <motion.div 
+                                className="text-center"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 2.2, duration: 0.6 }}
                             >
-                                {isLoading ? 'Creating Account...' : `Create ${formData.role === 'recruiter' ? 'Recruiter' : 'User'} Account`}
-                            </Button>
+                                <p className="text-gray-600 text-sm sm:text-base">
+                                    Already have an account?{' '}
+                                    <Link
+                                        href="/auth/login"
+                                        size="sm"
+                                        className="text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200"
+                                    >
+                                        Sign in here
+                                    </Link>
+                                </p>
+                            </motion.div>
 
-                            {/* Alternative Action */}
-                            <Button
-                                variant="bordered"
-                                size="lg"
-                                className="border-brand-orange text-brand-orange w-full font-medium transition-all duration-200"
+                            {/* Features */}
+                            <motion.div 
+                                className="flex flex-wrap gap-2 justify-center mt-6"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 2.3, duration: 0.6 }}
                             >
-                                Sign up with Google
-                            </Button>
-                        </div>
-
-                        {/* Footer */}
-                        <Divider className="my-4" />
-
-                        <div className="text-center">
-                            <p className="text-muted text-sm">
-                                Already have an account?{' '}
-                                <Link
-                                    href="#"
+                                <Chip
                                     size="sm"
-                                    className="text-brand-blue font-semibold hover:underline"
+                                    variant="flat"
+                                    className='text-blue-600 bg-blue-50 border border-blue-100'
+                                    startContent={<Shield className="h-3 w-3" />}
                                 >
-                                    Sign in here
-                                </Link>
-                            </p>
-                        </div>
-
-                        {/* Features */}
-                        <div className="flex flex-wrap gap-2 justify-center mt-4">
-                            <Chip
-                                size="sm"
-                                variant="flat"
-                                className='text-brand-blue bg-[#EEF2FF]'
-                            >
-                                Secure
-                            </Chip>
-                            <Chip
-                                size="sm"
-                                variant="flat"
-                                className='text-brand-teal bg-[#F0F9FF]'
-                            >
-                                Fast Setup
-                            </Chip>
-                            <Chip
-                                size="sm"
-                                variant="flat"
-                                className='text-brand-orange bg-[#FFF7ED]'
-                            >
-                                {formData.role === 'recruiter' ? 'Post Jobs' : 'Free Trial'}
-                            </Chip>
-                        </div>
-                    </CardBody>
-                </Card>
+                                    Secure
+                                </Chip>
+                                <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    className='text-cyan-600 bg-cyan-50 border border-cyan-100'
+                                    startContent={<Zap className="h-3 w-3" />}
+                                >
+                                    Fast Setup
+                                </Chip>
+                                <Chip
+                                    size="sm"
+                                    variant="flat"
+                                    className='text-green-600 bg-green-50 border border-green-100'
+                                    startContent={<CheckCircle className="h-3 w-3" />}
+                                >
+                                    {formData.role === 'recruiter' ? 'Post Jobs' : 'Free Trial'}
+                                </Chip>
+                            </motion.div>
+                        </CardBody>
+                    </Card>
+                </motion.div>
 
                 {/* Bottom Text */}
-                <p
-                    className="text-white text-center text-sm mt-6 opacity-90"
+                <motion.p
+                    className="text-white/80 text-center text-sm mt-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 2.4, duration: 0.6 }}
                 >
                     {formData.role === 'recruiter'
                         ? "Join as a recruiter to find the best talent for your company"
-                        : "By registering, you'll gain access to our full platform features"
+                        : "Join thousands of companies revolutionizing their hiring process"
                     }
-                </p>
+                </motion.p>
             </div>
         </div>
     );
 };
 
-export default RegistrationPage;
+export default RegisterPage;

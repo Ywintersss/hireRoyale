@@ -5,9 +5,10 @@ export interface RegistrationFormSchema {
     phone: string,
     password: string,
     confirmPassword: string,
+    company: string,
     agreeToTerms: boolean,
-    subscribeNewsletter: boolean
-    role: 'user' | 'recruiter';
+    subscribeNewsletter: boolean,
+    role: 'user' | 'recruiter'
 }
 
 export interface RegistrationErrorSchema {
@@ -17,10 +18,11 @@ export interface RegistrationErrorSchema {
     phone?: string,
     password?: string,
     confirmPassword?: string,
-    country?: string,
+    company?: string,
     agreeToTerms?: string,
-    subscribeNewsletter?: string
-    role?: string;
+    subscribeNewsletter?: string,
+    role?: string,
+    general?: string
 }
 
 export interface User {
@@ -106,4 +108,5 @@ export interface NavItem {
     href: string;
     badge?: number;
     color?: 'primary' | 'secondary' | 'default';
+    description?: string;
 }

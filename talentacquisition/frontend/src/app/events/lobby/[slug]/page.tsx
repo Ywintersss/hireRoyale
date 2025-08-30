@@ -213,7 +213,9 @@ const EventLobby = () => {
 
     const handleJoinVideoCall = (user: UserProfile) => {
         setSelectedConnection(user);
-        onOpen();
+        // Navigate to the dedicated video room route with event slug and peer id
+        const roomId = `${eventData.id}-${user.id}`;
+        window.location.href = `/events/room/${roomId}`;
     };
 
     const renderUserCard = (user: UserProfile, isExpanded: boolean) => (
