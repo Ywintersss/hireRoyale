@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { User as UserSchema, UserEvent, JobRequirementData } from '../../../../../types/types';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import RecruiterProfileModal from '@/components/LobbyRecruiterProfile';
 
 interface ConnectionRequest {
@@ -67,7 +67,7 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
     const currentUser = session?.user
 
     const { data: eventData, isLoading, isSuccess } = useQuery({
-        queryKey: ['events'],
+        queryKey: ['events', slug],
         queryFn: async () => {
             const response = await fetch(`http://localhost:8000/events/fetch-one/${slug}`)
             return response.json()
@@ -81,8 +81,23 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
             return response.json()
         },
     })
-    console.log(jobsData)
-    console.log(slug)
+
+    const createConnectionRequestMutation = useMutation({
+        mutationFn: async ({ userId, eventId }: { userId: string, eventId: string }) => {
+            return fetch(`http://localhost:8000/rooms/create-room`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    eventId: eventId
+                }),
+                credentials: 'include'
+            })
+        }
+
+    })
 
     useEffect(() => {
         if (isSuccess) {
@@ -122,22 +137,12 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
 
         setConnectionRequests(prev => [...prev, newRequest]);
 
-        // Simulate recruiter accepting the request after 2 seconds
-        setTimeout(() => {
-            setConnectionRequests(prev =>
-                prev.map(req =>
-                    req.to.id === recruiter.id && req.from.id === currentUser?.id
-                        ? { ...req, status: 'accepted' }
-                        : req
-                )
-            );
-            setActiveConnections(prev => [...prev, recruiter.id]);
-        }, 2000);
+        // Have recruiter accept connection
+
     };
 
-    const handleJoinVideoCall = (user: UserProfile) => {
+    const handleJoinVideoCall = (user: UserSchema) => {
         setSelectedConnection(user);
-        // Navigate to the dedicated video room route with event slug and peer id
         const roomId = `${eventData.id}-${user.id}`;
         window.location.href = `/events/room/${roomId}`;
     };
@@ -242,9 +247,8 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
         return (
             <>
                 {
-                    !isJobsLoading && jobsData.filter((job: JobRequirementData) => recruiter.id === job.userId && slug === job.eventId).map((job: JobRequirementData) => {
+                    !isJobsLoading && jobsData.filter((job: JobRequirementData) => recruiter.id === job.userId && slug === job.eventId).map((job: JobRequirementData, idx: number) => {
                         const requirements = job.requiredSkills.split(',')
-                        console.log('reqs', requirements)
                         return (<Card key={`${job.id}-${recruiter.id}`} className="mb-4">
                             <CardBody className="p-4">
                                 <div className="flex items-start justify-between mb-3">
@@ -313,7 +317,6 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
                                             className="bg-brand-teal text-white flex-1"
                                             startContent={<MessageCircle className="h-4 w-4" />}
                                             onPress={() => handleConnectRequest(recruiter)}
-                                            isDisabled={!recruiter.isOnline}
                                         >
                                             Connect
                                         </Button>
@@ -341,7 +344,7 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
 
     return (
         <div className="w-full min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#0EA5E9] to-[#F97316] p-4">
-            {!isLoading &&
+            {!isLoading && isSuccess &&
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <Card className="mb-4 bg-white/95 backdrop-blur">
@@ -362,7 +365,9 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4" />
-                                        <span>{eventData?.participants.length} participants</span>
+                                        {eventData?.participants &&
+                                            <span>{eventData?.participants.length} participants</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
