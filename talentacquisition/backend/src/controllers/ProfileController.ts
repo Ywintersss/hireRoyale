@@ -26,7 +26,6 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
                 resume: true
             }
         })
-        // $queryRaw`SELECT * FROM user WHERE id = ${session.user.id}`
 
         if (!userData) {
             return res.status(500).json({ error: "No user found" });
@@ -52,9 +51,11 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
             return res.status(400).json({ error: "No data provided" });
         }
 
-        const { firstName, lastName, email, contact, location, bio, skills } = req.body
+        const { firstName, lastName, email, contact, location, bio, skills, company, industry } = req.body
 
         const name = `${firstName} ${lastName}`
+
+        console.log(`Company: ${company}, Industry: ${industry}, Skills: ${skills}`)
 
         const userData = await prisma.user.update({
             where: { id: session.user.id },
@@ -64,7 +65,9 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
                 contact,
                 location,
                 bio,
-                skills
+                skills,
+                company,
+                industry
             }
         })
 
