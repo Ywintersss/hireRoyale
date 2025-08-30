@@ -361,13 +361,13 @@ export default function VideoRoomPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${
+    <div className={`min-h-screen w-full transition-all duration-500 ${
       isDarkMode 
         ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900' 
         : 'bg-gradient-to-br from-[#1E3A8A] via-[#0EA5E9] to-[#F97316]'
     }`}>
       {/* Header */}
-      <div className="fixed top-0 w-full z-50 bg-white/10 backdrop-blur-md border-b border-white/20">
+      <div className="top-0 w-full z-50 bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
