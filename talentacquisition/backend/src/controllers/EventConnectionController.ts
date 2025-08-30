@@ -58,11 +58,11 @@ export const leaveAndSyncEventLobbyConnection = async (req: Request, res: Respon
         }
 
         const userId = session.user.id;
-        const { lobbyId } = req.body;
+        const { eventId } = req.body;
 
         const lobby = await prisma.lobby.findUnique({
             where: {
-                id: lobbyId
+                eventId: eventId
             }
         })
 
@@ -74,7 +74,7 @@ export const leaveAndSyncEventLobbyConnection = async (req: Request, res: Respon
             where: {
                 userId_lobbyId: {
                     userId: userId,
-                    lobbyId: lobbyId
+                    lobbyId: lobby.id
                 },
             }
         })

@@ -1,7 +1,7 @@
 'use client'
 import { io, Socket } from 'socket.io-client'
 
-export let socket: Socket | null = io("http://localhost:8000", {
+export let socket: Socket = io("http://localhost:8000", {
     //options
 });
 

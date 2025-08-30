@@ -13,6 +13,7 @@ import { __dirname } from "./lib/pathHelper.ts";
 import http from "http";
 import { initSocket } from "./lib/socket.ts";
 import eventRoomRoutes from "./routes/eventroom.ts";
+import { scheduleLobbyCreation } from "./timed/timedLobbyCreation.ts";
 
 const app = express();
 const httpServer = createServer(app);
@@ -88,6 +89,10 @@ io.on("connection", (socket) => {
     });
 });
 
+initSocket(httpServer)
+
 httpServer.listen(port, () => {
     console.log(`API and signaling server listening on http://localhost:${port}`);
 });
+
+scheduleLobbyCreation()

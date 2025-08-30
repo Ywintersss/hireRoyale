@@ -1,10 +1,10 @@
 import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGroup, Avatar, Divider, Modal, ModalContent, ModalHeader, ModalBody, Input, Textarea, ModalFooter, useDisclosure } from "@heroui/react";
-import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X } from "lucide-react";
+import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X, HousePlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Event, EventsPageProps } from "../../types/types";
 import { socket } from "@/lib/socket";
 import JobRequirementsModal from "./JobRequirementsModal";
-
+import { useRouter } from "next/navigation";
 
 const EventsPage: React.FC<EventsPageProps> = ({
     currentUser,
@@ -27,6 +27,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [filter, setFilter] = useState('all');
+    const router = useRouter();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -231,8 +232,6 @@ const EventsPage: React.FC<EventsPageProps> = ({
         })
     }, [])
 
-    const lobbyMap = new Map();
-
     const createTempLobby = () => {
         fetch('http://localhost:8000/events/create-lobby', {
             method: 'POST',
@@ -251,7 +250,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
             .catch(error => console.error('Error creating lobby:', error));
     }
 
-    const joinTempLobby = () => {
+    const joinLobby = (eventId: string) => {
         fetch('http://localhost:8000/lobby/join-lobby', {
             method: 'POST',
             headers: {
@@ -259,42 +258,45 @@ const EventsPage: React.FC<EventsPageProps> = ({
             },
             credentials: 'include',
             body: JSON.stringify({
-                eventId: "cmewuedai0007cdx0qtvzpezh",
+                eventId: eventId,
             })
         })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Lobby found:', data);
+        .then(response => response.json())
+        .then(data => {
+            console.log('Lobby found:', data);
 
-                if (data.connection) {
-                    console.log('Lobby ID:', data.connection.lobbyId);
-                    const roomId = data.connection.lobbyId
-                    lobbyMap.set("Lobby", roomId);
-                    socket.emit('join_lobby', roomId);
-                }
-            })
-            .catch(error => console.error('Error joining lobby:', error));
+            if (data.connection) {
+                console.log('Lobby ID:', data.connection.lobbyId);
+                const roomId = data.connection.lobbyId
+                socket.emit('join_lobby', roomId);
+            }
+
+            router.push(`events/lobby/${eventId}`)
+            // socket.on('user_joined', () => router.push(`/lobby/${eventId}`))
+        })
+        .catch(error => console.error('Error joining lobby:', error));
     }
 
-    const leaveTempLobby = () => {
-        fetch('http://localhost:8000/lobby/leave-lobby', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                lobbyId: lobbyMap.get("Lobby"),
-            })
-        }
-        )
-            .then(response => response.json())
-            .then(data => {
-                console.log('Lobby left:', data);
-                socket.emit('leave_lobby', lobbyMap.get("Lobby"));
-            })
-            .catch(error => console.error('Error leaving lobby:', error));
-    }
+
+    // const leaveTempLobby = () => {
+    //     fetch('http://localhost:8000/lobby/leave-lobby', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json'
+    //         },
+    //         credentials: 'include',
+    //         body: JSON.stringify({
+    //             lobbyId: lobbyMap.get("Lobby"),
+    //         })
+    //     }
+    //     )
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             console.log('Lobby left:', data);
+    //             socket.emit('leave_lobby', lobbyMap.get("Lobby"));
+    //         })
+    //         .catch(error => console.error('Error leaving lobby:', error));
+    // }
 
 
     return (
@@ -314,7 +316,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                         </p>
                     </div>
 
-                    <Button
+                    {/* <Button
                         startContent={<Plus className="h-4 w-4" />}
                         className="bg-brand-teal text-white font-semibold"
                         onPress={() => createTempLobby()}
@@ -324,7 +326,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                     <Button
                         startContent={<Plus className="h-4 w-4" />}
                         className="bg-brand-teal text-white font-semibold"
-                        onPress={() => joinTempLobby()}
+                        onPress={() => joinLobby()}
                     >
                         Join Lobby
                     </Button>
@@ -334,7 +336,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                         onPress={() => leaveTempLobby()}
                     >
                         Leave Lobby
-                    </Button>
+                    </Button> */}
 
                     <div className="flex items-center gap-3">
                         {/* Filter Dropdown */}
@@ -528,7 +530,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                 >
                                                     Join Event
                                                 </Button>
-                                            ) : (
+                                            ) : event.status !== 'active' ? (
                                                 <Button
                                                     size="sm"
                                                     variant="bordered"
@@ -539,6 +541,18 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                     onPress={() => handleJoinEvent(event.id)}
                                                 >
                                                     {isHover === event.id ? "Leave Event" : "Joined"}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="sm"
+                                                    variant="bordered"
+                                                    className="flex-1 border-green-500 text-green-600 hover:border-blue-500 hover:text-blue-600"
+                                                    startContent={isHover === event.id ? <HousePlus className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                    onMouseEnter={() => setIsHover(event.id)}
+                                                    onMouseLeave={() => setIsHover(null)}
+                                                    onPress={() => joinLobby(event.id)}
+                                                >
+                                                    {isHover === event.id ? "Join Lobby" : "Joined"}
                                                 </Button>
                                             )}
                                         </div>

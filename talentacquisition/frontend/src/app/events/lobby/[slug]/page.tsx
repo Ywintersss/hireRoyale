@@ -38,6 +38,8 @@ import { authClient } from '@/lib/auth-client';
 import { User as UserSchema, UserEvent, JobRequirementData } from '../../../../../types/types';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import RecruiterProfileModal from '@/components/LobbyRecruiterProfile';
+import { socket } from '@/lib/socket';
+import { useRouter } from 'next/navigation';
 
 interface ConnectionRequest {
     from: UserSchema;
@@ -60,6 +62,7 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
     const [jobSeekers, setJobSeekers] = useState<UserSchema[]>([])
     const [recruiters, setRecruiters] = useState<UserSchema[]>([])
 
+    const router = useRouter()
 
     const { slug } = use(params)
 
@@ -147,8 +150,25 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
         window.location.href = `/events/room/${roomId}`;
     };
 
-    const handleJoinLobby = async () => {
-
+    const leaveLobby = () => {
+        fetch('http://localhost:8000/lobby/leave-lobby', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                eventId: eventData.id,
+            })
+        }
+        )
+        .then(response => response.json())
+        .then(data => {
+            console.log('Lobby left:', data);
+            socket.emit('leave_lobby', eventData.id);
+            router.push('/events')
+        })
+        .catch(error => console.error('Error leaving lobby:', error));
     }
 
     const handleOpenRecruiterProfile = (recruiter: UserSchema, job: JobRequirementData) => {
@@ -344,6 +364,15 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
 
     return (
         <div className="w-full min-h-screen bg-gradient-to-br from-[#1E3A8A] via-[#0EA5E9] to-[#F97316] p-4">
+            <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                className="text-brand-blue border-red-500 bg-red-500/75"
+                onPress={() => leaveLobby()}
+            >
+                <ChevronLeft />
+            </Button>
             {!isLoading && isSuccess &&
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}

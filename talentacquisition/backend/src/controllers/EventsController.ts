@@ -201,6 +201,22 @@ export const createEventLobby = async (req: Request, res: Response) => {
         }
     });
 
+    if (!lobby) {
+        return res.status(500).json({ error: "Failed to create lobby" });
+    }
+
+    const event = await prisma.event.update({
+        where: {
+            id: eventId
+        },
+        data: {
+            status: "active"
+        }
+    })
+
+    if (!event) {
+        return res.status(500).json({ error: "Failed to update event status" });
+    }
 
     return res.status(201).json(lobby);
 }
