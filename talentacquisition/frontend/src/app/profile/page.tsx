@@ -1,6 +1,8 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { upload } from '../../../../backend/src/middleware/uploads';
+import { updateResume } from '../../../../backend/src/controllers/ProfileController';
+import { authClient } from '@/lib/auth-client';
 import {
     Button,
     Input,
@@ -13,6 +15,8 @@ import {
     Avatar,
     Progress,
     Badge,
+    Select,
+    SelectItem
 } from "@heroui/react";
 import { 
     User, 
@@ -31,8 +35,10 @@ import {
     GraduationCap,
     Save,
     X,
-    CheckCircle
+    CheckCircle,
+    Building
 } from 'lucide-react';
+import { normalizeCommaSeparated, normalizeNulls } from '@/lib/utils';
 
 const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
@@ -52,7 +58,9 @@ const UserProfilePage = () => {
         github: 'https://github.com/johndoe',
         skills: ['React', 'Node.js', 'TypeScript', 'AWS', 'MongoDB', 'Python']
     });
-
+    
+    const { data: currentUser, error, isPending } = authClient.useSession();
+    const isRecruiter = currentUser?.user?.role?.name === 'Recruiter'
     const [editData, setEditData] = useState(profileData);
 
     const getUserProfile = () => {
@@ -65,16 +73,27 @@ const UserProfilePage = () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Profile data:', data);
-
-            const [firstName, ...lastParts] = data.name.split(" ");
+            
+            const normalizedData = normalizeNulls(data);
+            
+            const [firstName, ...lastParts] = normalizedData.name.split(" ");
             const lastName = lastParts.length > 0 ? lastParts.join(" ") : "";
+            
+            const skills = isRecruiter ? "" : normalizedData.skills.split(",")
 
             const profile = {
-                ...data,
+                ...normalizedData,
                 firstName,
-                lastName
+                lastName,
+                skills
             };
+            
+            if (isRecruiter){
+                profile.company = normalizedData.company
+                profile.industry = normalizedData.industry
+            }
+
+            console.log('Profile data:', profile);
 
             setProfileData(profile);
             setEditData(profile);
@@ -100,6 +119,8 @@ const UserProfilePage = () => {
     }
 
     const updateUserProfile = () => {
+        console.log('Edit data:', editData);
+        
         fetch('http://localhost:8000/profile/update-profile', {
             method: 'PUT',
             headers: {
@@ -116,10 +137,7 @@ const UserProfilePage = () => {
         .catch(error => console.error('Error updating profile:', error));
     }
 
-    const uploadResume = () => {
-        const formData = new FormData();
-        formData.append("resume", resumeFile as File);
-
+    const uploadResume = (formData: FormData) => {
         fetch('http://localhost:8000/profile/upload-resume', {
             method: 'POST',
             credentials: 'include',
@@ -127,7 +145,21 @@ const UserProfilePage = () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Resume updated:', data.user.resume);
+            console.log('Resume uploaded:', data.user.resume);
+            getUserProfile();
+        })
+        .catch(error => console.error('Error updating resume:', error));
+    }
+
+    const updateResume = (formData: FormData) => {
+        fetch('http://localhost:8000/profile/update-resume', {
+            method: 'PUT',
+            credentials: 'include',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Resume updated:', data);
             getUserProfile();
         })
         .catch(error => console.error('Error updating resume:', error));
@@ -135,7 +167,7 @@ const UserProfilePage = () => {
 
     useEffect(() => {
         getUserProfile();
-    }, []);
+    }, [isRecruiter]);
 
     const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -149,14 +181,18 @@ const UserProfilePage = () => {
         }
 
         setResumeFile(file);
+
+        const formData = new FormData();
+        formData.append("resume", file);
+        
+        if (!resumeUploaded) {
+            uploadResume(formData);
+        } else {
+            updateResume(formData);
+        }
     };
 
-    useEffect(() => {
-        if (resumeFile && !resumeUploaded) {
-            uploadResume();
-            setResumeUploaded(true);
-        }
-    }, [resumeFile]);
+    
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -380,22 +416,54 @@ const UserProfilePage = () => {
                             <Card className="bg-white border-gray-200 shadow-sm">
                                 <CardHeader className="pb-2">
                                     <h3 className="text-xl font-semibold section-header">
-                                        Skills & Expertise
+                                        {isRecruiter ? 'Company Information' : 'Skills & Expertise'}
                                     </h3>
                                 </CardHeader>
                                 <CardBody>
                                     <div className="flex flex-wrap gap-2">
-                                        {profileData?.skills?.map((skill, index) => (
+                                        {!isRecruiter ? profileData?.skills?.map((skill, index) => (
                                             <Chip
                                                 key={index}
                                                 variant="flat"
                                                 className="bg-[#F0F9FF] text-brand-teal"
                                             >
                                                 {skill}
-                                            </Chip>
-                                        ))}
+                                            </Chip> 
+                                        )) 
+                                        :
+                                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                                <Input
+                                                    label="Currently Working At"
+                                                    value={isEditing ? editData?.company : profileData?.company}
+                                                    onChange={(e) => handleInputChange('company', e.target.value)}
+                                                    startContent={<Building className="h-4 w-4 text-brand-blue" />}
+                                                    isReadOnly={!isEditing}
+                                                    classNames={{
+                                                        label: 'text-brand-blue font-medium',
+                                                        input: 'text-gray-900',
+                                                        inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
+                                                    }}
+                                                />
+                                                <Select
+                                                    label="Industry"
+                                                    placeholder="Select industry"
+                                                    value={profileData?.industry}
+                                                    onChange={(e) => handleInputChange('industry', e.target.value)}
+                                                    classNames={{
+                                                        label: 'text-brand-blue font-medium',
+                                                        trigger: 'border-gray-300 focus:border-brand-teal',
+                                                    }}
+                                                >
+                                                    <SelectItem key="technology" >Technology</SelectItem>
+                                                    <SelectItem key="finance">Finance</SelectItem>
+                                                    <SelectItem key="healthcare">Healthcare</SelectItem>
+                                                    <SelectItem key="education">Education</SelectItem>
+                                                    <SelectItem key="retail">Retail</SelectItem>
+                                                </Select>
+                                            </div> 
+                                        }
                                     </div>
-                                    {isEditing && (
+                                    {isEditing && !isRecruiter && (
                                         <div className="mt-4">
                                             <Input
                                                 label="Add Skills"
@@ -405,6 +473,7 @@ const UserProfilePage = () => {
                                                     input: 'text-gray-900',
                                                     inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
                                                 }}
+                                                onChange={(e) => handleInputChange('skills', normalizeCommaSeparated(e.target.value))}
                                             />
                                         </div>
                                     )}

@@ -2,6 +2,9 @@ import { PrismaClient } from '../../app/generated/prisma/index.js';
 import type { Request, Response } from 'express'
 import type { AuthenticatedRequest } from '../types/types.ts';
 import { auth, getSession } from '../lib/auth.ts';
+import { __dirname } from '../lib/pathHelper.ts';
+import fs from 'fs';
+import path from 'path';
 
 interface AuthenticatedRequest extends Request {
     file?: Express.Multer.File;
@@ -23,7 +26,6 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
                 resume: true
             }
         })
-        // $queryRaw`SELECT * FROM user WHERE id = ${session.user.id}`
 
         if (!userData) {
             return res.status(500).json({ error: "No user found" });
@@ -49,16 +51,23 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
             return res.status(400).json({ error: "No data provided" });
         }
 
-        const { firstName, lastName, email, contact } = req.body
+        const { firstName, lastName, email, contact, location, bio, skills, company, industry } = req.body
 
         const name = `${firstName} ${lastName}`
+
+        console.log(`Company: ${company}, Industry: ${industry}, Skills: ${skills}`)
 
         const userData = await prisma.user.update({
             where: { id: session.user.id },
             data: {
                 name,
                 email,
-                contact
+                contact,
+                location,
+                bio,
+                skills,
+                company,
+                industry
             }
         })
 
@@ -113,5 +122,56 @@ export const uploadResume = async (req: AuthenticatedRequest, res: Response) => 
 }
 
 export const updateResume = async (req: AuthenticatedRequest, res: Response) => {
+    const session = await getSession(req)
 
+    if (!session?.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const currentResume = await prisma.resume.findUnique({
+        where: {
+            id: session.user.resumeId as string,
+        },
+    });
+
+    if (!currentResume) {
+        return res.status(404).json({ error: "Resume not found in DB" });
+    }
+
+    // Compute the resumes directory path
+    const resumesDir = path.join(__dirname, "..", "..", "assets", "resumes");
+
+    // Delete old file if it exists
+    if (currentResume.resumeUrl) {
+        const oldFilePath = path.join(resumesDir, currentResume.resumeUrl);
+        if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+        }
+    }
+
+    // Save new file (Multer has already saved it to resumesDir)
+    const resume = req.file.filename;
+
+    // Update DB
+    const newResume = await prisma.resume.update({
+        data: { 
+            resumeUrl: resume,
+        },
+        where: {
+            id: session.user.resumeId as string,
+        },
+    });
+
+    if (!newResume) {
+        return res.status(500).json({ error: "Resume upload failed" });
+    }
+
+    return res.status(200).json({
+        message: "Resume updated successfully",
+        newResume,
+    });
 }
