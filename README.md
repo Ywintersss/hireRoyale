@@ -1,4 +1,4 @@
-# 🏆 **HireRoyale - Championship-Winning Talent Acquisition & Onboarding Platform**
+# 🏆 **HireRoyale - Talent Acquisition & Onboarding Platform**
 
 **Hackathon Submission: Optimizing Talent Acquisition & Onboarding for SMEs**
 
@@ -15,7 +15,7 @@
 
 ### **🎥 Talent Acquisition (Port 3000)**
 1. **AI Resume Shortlisting** - `/shortlist`
-   - **Championship UI**: Stunning candidate visualization with "player stats"
+   - **UI**: Stunning candidate visualization with "player stats"
    - **Advanced Analytics**: Precision, recall, F1-score metrics
    - **Smart Filtering**: Score-based, status-based, and custom filters
    - **Interactive Elements**: Hover effects, animations, and responsive design
@@ -244,7 +244,7 @@ npm run dev
 **Built for hackathon judges who demand excellence in technical execution, innovation, and professional presentation!** 🏆
 
 **Key Differentiators:**
-- **Championship-Level UI**: Stunning animations, accessibility, and professional polish
+- **UI**: Stunning animations, accessibility, and professional polish
 - **Advanced WebRTC**: Enterprise-grade video interface with real-time analytics
 - **AI-Powered Insights**: Explainable ML with F1-score metrics and filtering
 - **Performance Excellence**: Optimized rendering, lazy loading, and smooth interactions
