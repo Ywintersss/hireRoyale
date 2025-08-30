@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { upload } from '../../../../backend/src/middleware/uploads';
+import { updateResume } from '../../../../backend/src/controllers/ProfileController';
 import {
     Button,
     Input,
@@ -33,6 +34,7 @@ import {
     X,
     CheckCircle
 } from 'lucide-react';
+import { normalizeCommaSeparated, normalizeNulls } from '@/lib/utils';
 
 const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
@@ -67,13 +69,18 @@ const UserProfilePage = () => {
         .then(data => {
             console.log('Profile data:', data);
 
-            const [firstName, ...lastParts] = data.name.split(" ");
+            const normalizedData = normalizeNulls(data);
+
+            const [firstName, ...lastParts] = normalizedData.name.split(" ");
             const lastName = lastParts.length > 0 ? lastParts.join(" ") : "";
 
+            const skills = normalizedData.skills.split(",")
+
             const profile = {
-                ...data,
+                ...normalizedData,
                 firstName,
-                lastName
+                lastName,
+                skills
             };
 
             setProfileData(profile);
@@ -116,10 +123,7 @@ const UserProfilePage = () => {
         .catch(error => console.error('Error updating profile:', error));
     }
 
-    const uploadResume = () => {
-        const formData = new FormData();
-        formData.append("resume", resumeFile as File);
-
+    const uploadResume = (formData: FormData) => {
         fetch('http://localhost:8000/profile/upload-resume', {
             method: 'POST',
             credentials: 'include',
@@ -127,7 +131,21 @@ const UserProfilePage = () => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Resume updated:', data.user.resume);
+            console.log('Resume uploaded:', data.user.resume);
+            getUserProfile();
+        })
+        .catch(error => console.error('Error updating resume:', error));
+    }
+
+    const updateResume = (formData: FormData) => {
+        fetch('http://localhost:8000/profile/update-resume', {
+            method: 'PUT',
+            credentials: 'include',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Resume updated:', data);
             getUserProfile();
         })
         .catch(error => console.error('Error updating resume:', error));
@@ -149,14 +167,18 @@ const UserProfilePage = () => {
         }
 
         setResumeFile(file);
+
+        const formData = new FormData();
+        formData.append("resume", file);
+        
+        if (!resumeUploaded) {
+            uploadResume(formData);
+        } else {
+            updateResume(formData);
+        }
     };
 
-    useEffect(() => {
-        if (resumeFile && !resumeUploaded) {
-            uploadResume();
-            setResumeUploaded(true);
-        }
-    }, [resumeFile]);
+    
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -405,6 +427,7 @@ const UserProfilePage = () => {
                                                     input: 'text-gray-900',
                                                     inputWrapper: 'border-gray-300 focus-within:border-brand-teal hover:border-brand-teal',
                                                 }}
+                                                onChange={(e) => handleInputChange('skills', normalizeCommaSeparated(e.target.value))}
                                             />
                                         </div>
                                     )}
