@@ -10,6 +10,9 @@ import profileRoutes from './routes/profile.ts';
 import shortlistRoutes from './routes/shortlist.ts';
 import path from "path";
 import { __dirname } from "./lib/pathHelper.ts";
+import http from "http";
+import { initSocket } from "./lib/socket.ts";
+import eventRoomRoutes from "./routes/eventroom.ts";
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,6 +35,7 @@ app.all('/api/auth/*splat', toNodeHandler(auth));
 app.use('/events', eventRoutes);
 app.use('/profile', profileRoutes);
 app.use('/shortlist', shortlistRoutes);
+app.use('/lobby', eventRoomRoutes)
 app.use('/resumes', express.static(path.join(__dirname, "..", "..", "assets", "resumes")));
 
 // Socket.IO signaling server
