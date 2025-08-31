@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import type { Event, UserEvent } from '../../../frontend/types/types.ts';
+import type { Event, UserEvent } from '../types/types.ts';
 import AIService, { type AIInsights, type PlayerStats, type ResumeAnalysis } from '../services/AIService.ts';
 import { getSession } from '../lib/auth.ts';
 

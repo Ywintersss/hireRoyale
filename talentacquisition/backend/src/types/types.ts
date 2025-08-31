@@ -20,3 +20,29 @@ export interface ConnectionData {
     recruiterId: string;
     lobbyId: string
 }
+
+export interface UserEvent {
+    userId: string;
+    eventId: string;
+    user: User;
+    event: Event;
+}
+
+export interface Event {
+    id: string;
+    name: string;
+    description?: string;
+    date?: Date;
+    time?: Date;
+    requirements?: string;
+    status?: string;
+    maxParticipants?: number;
+    industry?: string;
+    level?: string;
+    imgUrl?: string;
+    createdBy: User;
+    participants: UserEvent[];
+    _count?: {
+        participants: number;
+    };
+}
