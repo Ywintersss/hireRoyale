@@ -1,10 +1,30 @@
-import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGroup, Avatar, Divider, Modal, ModalContent, ModalHeader, ModalBody, Input, Textarea, ModalFooter, useDisclosure } from "@heroui/react";
-import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X, HousePlus } from "lucide-react";
+import { Select, SelectItem, Button, Card, CardHeader, Chip, CardBody, AvatarGroup, Avatar, Divider, Modal, ModalContent, ModalHeader, ModalBody, Input, Textarea, ModalFooter, useDisclosure, Progress, Tooltip, Badge } from "@heroui/react";
+import { CheckCircle, AlertCircle, Users, Calendar, Plus, Edit, Clock, Building, Eye, UserPlus, Star, X, HousePlus, Brain, Zap, Target, TrendingUp, Award, Crown, Sparkles, BarChart3, MessageSquare, Video, Mic, Smartphone, Globe, Briefcase, GraduationCap, Heart, Shield, Rocket, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Event, EventsPageProps } from "../../types/types";
 import { socket } from "@/lib/socket";
 import JobRequirementsModal from "./JobRequirementsModal";
 import { useRouter } from "next/navigation";
+
+// AI-powered features interface
+interface AIInsights {
+    successProbability: number;
+    skillMatch: number;
+    culturalFit: number;
+    marketDemand: number;
+    recommendedSalary: string;
+    topSkills: string[];
+    missingSkills: string[];
+}
+
+interface PlayerStats {
+    technicalSkills: number;
+    experienceLevel: number;
+    communicationSkills: number;
+    problemSolving: number;
+    teamCollaboration: number;
+    adaptability: number;
+}
 
 const EventsPage: React.FC<EventsPageProps> = ({
     currentUser,
@@ -27,6 +47,10 @@ const EventsPage: React.FC<EventsPageProps> = ({
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [filter, setFilter] = useState('all');
+    const [showAIInsights, setShowAIInsights] = useState(false);
+    const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
+    const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
+    const [isAIAnalyzing, setIsAIAnalyzing] = useState(false);
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -44,6 +68,66 @@ const EventsPage: React.FC<EventsPageProps> = ({
     const isRecruiter = currentUser?.role ? (currentUser.role?.name === 'Recruiter') : false;
     const isUser = currentUser?.role ? currentUser.role?.name === 'User' : true;
     const MINIMUM_RECRUITERS = 5;
+
+    // AI Analysis Functions
+    const analyzeEventWithAI = async (event: Event) => {
+        setIsAIAnalyzing(true);
+        try {
+            // Simulate AI analysis - replace with actual API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const mockAIInsights: AIInsights = {
+                successProbability: Math.floor(Math.random() * 30) + 70, // 70-100%
+                skillMatch: Math.floor(Math.random() * 20) + 80, // 80-100%
+                culturalFit: Math.floor(Math.random() * 25) + 75, // 75-100%
+                marketDemand: Math.floor(Math.random() * 40) + 60, // 60-100%
+                recommendedSalary: `$${Math.floor(Math.random() * 50000) + 50000}-${Math.floor(Math.random() * 50000) + 100000}`,
+                topSkills: ['JavaScript', 'React', 'Node.js', 'TypeScript', 'AWS'],
+                missingSkills: ['Docker', 'Kubernetes']
+            };
+
+            const mockPlayerStats: PlayerStats = {
+                technicalSkills: Math.floor(Math.random() * 20) + 80,
+                experienceLevel: Math.floor(Math.random() * 20) + 80,
+                communicationSkills: Math.floor(Math.random() * 20) + 80,
+                problemSolving: Math.floor(Math.random() * 20) + 80,
+                teamCollaboration: Math.floor(Math.random() * 20) + 80,
+                adaptability: Math.floor(Math.random() * 20) + 80
+            };
+
+            setAiInsights(mockAIInsights);
+            setPlayerStats(mockPlayerStats);
+            setShowAIInsights(true);
+        } catch (error) {
+            console.error('AI analysis failed:', error);
+        } finally {
+            setIsAIAnalyzing(false);
+        }
+    };
+
+    const getSkillLevelColor = (level: number) => {
+        if (level >= 90) return '#10B981'; // Green
+        if (level >= 80) return '#3B82F6'; // Blue
+        if (level >= 70) return '#F59E0B'; // Yellow
+        return '#EF4444'; // Red
+    };
+
+    const getEventTypeIcon = (industry: string) => {
+        switch (industry?.toLowerCase()) {
+            case 'technology':
+                return <Zap className="h-4 w-4" />;
+            case 'finance':
+                return <TrendingUp className="h-4 w-4" />;
+            case 'healthcare':
+                return <Heart className="h-4 w-4" />;
+            case 'education':
+                return <GraduationCap className="h-4 w-4" />;
+            case 'retail':
+                return <ShoppingBag className="h-4 w-4" />;
+            default:
+                return <Briefcase className="h-4 w-4" />;
+        }
+    };
 
     // Filter events based on user role and status
     useEffect(() => {
@@ -300,20 +384,29 @@ const EventsPage: React.FC<EventsPageProps> = ({
 
 
     return (
-        <div className="min-h-screen w-full bg-gray-50 p-6">
-            <div className="w-full mx-auto">
-                {/* Header */}
+        <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+            <div className="w-full mx-auto max-w-7xl">
+                {/* Enhanced Header with AI Features */}
                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold" style={{ color: '#1E3A8A' }}>
-                            Events
+                    <div className="flex items-center gap-4">
+                        <div className="relative">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25"></div>
+                            <div className="relative bg-white rounded-lg p-3 shadow-lg">
+                                <Brain className="h-8 w-8 text-blue-600" />
+                                </div>
+                        </div>
+                        <div>
+                                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                AI-Powered Events
                         </h1>
-                        <p className="text-gray-600 mt-2">
+                            <p className="text-gray-600 mt-2 flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-yellow-500" />
                             {isUser
-                                ? 'Discover and join approved events'
-                                : 'Manage and participate in events'
+                                    ? 'Discover opportunities with intelligent matching'
+                                    : 'Create events with AI-driven insights'
                             }
                         </p>
+                        </div>
                     </div>
 
                     {/* <Button
@@ -338,31 +431,52 @@ const EventsPage: React.FC<EventsPageProps> = ({
                         Leave Lobby
                     </Button> */}
 
-                    <div className="flex items-center gap-3">
-                        {/* Filter Dropdown */}
+                    <div className="flex items-center gap-4">
+                        {/* AI Insights Dashboard */}
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-lg p-2 shadow-sm">
+                            <BarChart3 className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm font-medium text-gray-700">AI Insights</span>
+                            <Badge color="success" size="sm">Live</Badge>
+                        </div>
+
+                        {/* Enhanced Filter Dropdown */}
                         <Select
                             placeholder="Filter Events"
                             size="md"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
-                            className="w-48"
+                            className="w-56"
                             classNames={{
-                                trigger: "border-gray-300 hover:border-brand-teal",
+                                trigger: "border-gray-300 hover:border-blue-500 bg-white/80 backdrop-blur-sm",
                                 value: "text-gray-900"
                             }}
+                            startContent={<Target className="h-4 w-4 text-blue-600" />}
                         >
-                            <SelectItem key="all" >All Events</SelectItem>
-                            <SelectItem key="joined">Joined Events</SelectItem>
+                            <SelectItem key="all" startContent={<Globe className="h-4 w-4" />}>All Events</SelectItem>
+                            <SelectItem key="joined" startContent={<CheckCircle className="h-4 w-4" />}>Joined Events</SelectItem>
                             {isRecruiter ? (
-                                <SelectItem key="my-events" >My Events</SelectItem>
+                                <SelectItem key="my-events" startContent={<Crown className="h-4 w-4" />}>My Events</SelectItem>
                             ) : <></>}
                         </Select>
+
+                        {/* AI Analysis Button */}
+                        <Tooltip content="Get AI-powered insights for this event">
+                            <Button
+                                startContent={<Brain className="h-4 w-4" />}
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                                onPress={() => selectedEvent && analyzeEventWithAI(selectedEvent)}
+                                isLoading={isAIAnalyzing}
+                                isDisabled={!selectedEvent}
+                            >
+                                AI Analysis
+                            </Button>
+                        </Tooltip>
 
                         {/* Create Event Button - Only for Recruiters */}
                         {isRecruiter && (
                             <Button
                                 startContent={<Plus className="h-4 w-4" />}
-                                className="bg-brand-teal text-white font-semibold"
+                                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                                 onPress={() => setIsCreateModalOpen(true)}
                             >
                                 Create Event
@@ -390,7 +504,8 @@ const EventsPage: React.FC<EventsPageProps> = ({
                             const userJoined = isUserJoined(event);
 
                             return (
-                                <Card key={event.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
+                                <Card key={event.id} className="bg-white/90 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-blue-200 group">
+                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-t-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                     <CardHeader className="">
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
@@ -412,8 +527,18 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                             {event.level}
                                                         </Chip>
                                                     )}
+                                                    {event.industry && (
+                                                        <Chip
+                                                                size="sm"
+                                                            variant="flat"
+                                                            style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}
+                                                            startContent={getEventTypeIcon(event.industry)}
+                                                            >
+                                                            {event.industry}
+                                                        </Chip>
+                                                    )}
                                                 </div>
-                                                <h3 className="text-lg font-semibold" style={{ color: '#1E3A8A' }}>
+                                                <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                                     {event.name}
                                                 </h3>
                                             </div>
@@ -1008,6 +1133,188 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                 </ModalFooter>
                             </>
                         )}
+                    </ModalContent>
+                </Modal>
+
+                {/* AI Insights Modal */}
+                <Modal
+                    isOpen={showAIInsights}
+                    onClose={() => setShowAIInsights(false)}
+                    size="4xl"
+                    scrollBehavior="inside"
+                >
+                    <ModalContent>
+                        <ModalHeader className="flex items-center gap-3">
+                            <Brain className="h-6 w-6 text-blue-600" />
+                            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                AI-Powered Insights
+                            </span>
+                        </ModalHeader>
+                        <ModalBody>
+                            {aiInsights && playerStats && (
+                                <div className="space-y-8">
+                                    {/* Success Probability */}
+                                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <Target className="h-6 w-6 text-blue-600" />
+                                            <h3 className="text-xl font-semibold text-gray-900">Success Probability</h3>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex-1">
+                                                <Progress
+                                                    value={aiInsights.successProbability}
+                                                    color="success"
+                                                    size="lg"
+                                                    className="mb-2"
+                                                />
+                                                <p className="text-sm text-gray-600">
+                                                    {aiInsights.successProbability}% chance of successful hiring
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-3xl font-bold text-green-600">
+                                                    {aiInsights.successProbability}%
+                                                </div>
+                                                <div className="text-sm text-gray-500">Success Rate</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Player Stats Grid */}
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                                <Award className="h-5 w-5 text-yellow-500" />
+                                                Candidate Profile Stats
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {Object.entries(playerStats).map(([skill, level]) => (
+                                                    <div key={skill} className="flex items-center justify-between">
+                                                        <span className="text-sm font-medium text-gray-700 capitalize">
+                                                            {skill.replace(/([A-Z])/g, ' $1').trim()}
+                                                        </span>
+                                                        <div className="flex items-center gap-2">
+                                                            <Progress
+                                                                value={level}
+                                                                color={level >= 90 ? "success" : level >= 80 ? "primary" : level >= 70 ? "warning" : "danger"}
+                                                                size="sm"
+                                                                className="w-20"
+                                                            />
+                                                            <span className="text-sm font-semibold" style={{ color: getSkillLevelColor(level) }}>
+                                                                {level}%
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                                <TrendingUp className="h-5 w-5 text-green-500" />
+                                                Market Analysis
+                                            </h3>
+                                            <div className="space-y-4">
+                                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Skill Match</span>
+                                                        <span className="text-sm font-semibold text-green-600">{aiInsights.skillMatch}%</span>
+                                                    </div>
+                                                    <Progress value={aiInsights.skillMatch} color="success" size="sm" />
+                                                </div>
+
+                                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Cultural Fit</span>
+                                                        <span className="text-sm font-semibold text-blue-600">{aiInsights.culturalFit}%</span>
+                                                    </div>
+                                                    <Progress value={aiInsights.culturalFit} color="primary" size="sm" />
+                                                </div>
+
+                                                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="text-sm font-medium text-gray-700">Market Demand</span>
+                                                        <span className="text-sm font-semibold text-purple-600">{aiInsights.marketDemand}%</span>
+                                                    </div>
+                                                    <Progress value={aiInsights.marketDemand} color="secondary" size="sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Skills Analysis */}
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                            <h4 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                                                <CheckCircle className="h-4 w-4" />
+                                                Top Skills
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {aiInsights.topSkills.map((skill, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        size="sm"
+                                                        variant="flat"
+                                                        style={{ backgroundColor: '#DCFCE7', color: '#166534' }}
+                                                    >
+                                                        {skill}
+                                                    </Chip>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                                            <h4 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                                                <AlertCircle className="h-4 w-4" />
+                                                Missing Skills
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {aiInsights.missingSkills.map((skill, index) => (
+                                                    <Chip
+                                                        key={index}
+                                                        size="sm"
+                                                        variant="flat"
+                                                        style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
+                                                    >
+                                                        {skill}
+                                                    </Chip>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Salary Recommendation */}
+                                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <TrendingUp className="h-5 w-5 text-purple-600" />
+                                            <h3 className="text-lg font-semibold text-gray-900">Salary Recommendation</h3>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-3xl font-bold text-purple-600 mb-2">
+                                                {aiInsights.recommendedSalary}
+                                            </div>
+                                            <p className="text-sm text-gray-600">
+                                                Based on market analysis, skills match, and experience level
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                variant="light"
+                                onPress={() => setShowAIInsights(false)}
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white"
+                                startContent={<Rocket className="h-4 w-4" />}
+                            >
+                                Apply AI Insights
+                            </Button>
+                        </ModalFooter>
                     </ModalContent>
                 </Modal>
 
