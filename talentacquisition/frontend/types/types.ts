@@ -148,3 +148,28 @@ export interface JobRequirementRegistrationData {
     department: string;
     isRemoteOk: boolean;
 }
+
+export type PeerMetadata = {
+    name?: string,
+    userId?: string;
+    role?: string;
+};
+
+
+export interface Participant {
+    id: string
+    stream?: MediaStream
+    metadata?: {
+        name: string
+        role: string
+        avatar?: string
+    }
+}
+
+export interface ConnectionRequest {
+    from: User;
+    to: User;
+    status: 'pending' | 'accepted' | 'declined';
+    message?: string;
+}
+

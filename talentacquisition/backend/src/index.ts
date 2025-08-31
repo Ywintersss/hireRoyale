@@ -14,6 +14,7 @@ import http from "http";
 import { initSocket } from "./lib/socket.ts";
 import eventRoomRoutes from "./routes/eventroom.ts";
 import { scheduleLobbyCreation } from "./timed/timedLobbyCreation.ts";
+import eventCallRoomRoutes from "./routes/eventcallroom.ts"
 
 const app = express();
 const httpServer = createServer(app);
@@ -37,57 +38,8 @@ app.use('/events', eventRoutes);
 app.use('/profile', profileRoutes);
 app.use('/shortlist', shortlistRoutes);
 app.use('/lobby', eventRoomRoutes)
+app.use('/rooms', eventCallRoomRoutes)
 app.use('/resumes', express.static(path.join(__dirname, "..", "..", "assets", "resumes")));
-
-// Socket.IO signaling server
-const io = new SocketIOServer(httpServer, {
-    cors: corsOptions,
-});
-
-type PeerMetadata = {
-    userId?: string;
-    role?: string;
-};
-
-io.on("connection", (socket) => {
-    let currentRoom: string | null = null;
-
-    socket.on("join-room", (roomId: string, metadata: PeerMetadata = {}) => {
-        currentRoom = roomId;
-        socket.join(roomId);
-        socket.to(roomId).emit("peer-joined", { socketId: socket.id, metadata });
-        // Send existing peers back to the new joiner
-        const clients = io.sockets.adapter.rooms.get(roomId) || new Set<string>();
-        const peers = Array.from(clients).filter((id) => id !== socket.id);
-        socket.emit("room-peers", peers);
-    });
-
-    socket.on("offer", (payload: { to: string; sdp: RTCSessionDescriptionInit }) => {
-        io.to(payload.to).emit("offer", { from: socket.id, sdp: payload.sdp });
-    });
-
-    socket.on("answer", (payload: { to: string; sdp: RTCSessionDescriptionInit }) => {
-        io.to(payload.to).emit("answer", { from: socket.id, sdp: payload.sdp });
-    });
-
-    socket.on("ice-candidate", (payload: { to: string; candidate: RTCIceCandidateInit }) => {
-        io.to(payload.to).emit("ice-candidate", { from: socket.id, candidate: payload.candidate });
-    });
-
-    socket.on("leave-room", () => {
-        if (currentRoom) {
-            socket.to(currentRoom).emit("peer-left", { socketId: socket.id });
-            socket.leave(currentRoom);
-            currentRoom = null;
-        }
-    });
-
-    socket.on("disconnect", () => {
-        if (currentRoom) {
-            socket.to(currentRoom).emit("peer-left", { socketId: socket.id });
-        }
-    });
-});
 
 initSocket(httpServer)
 

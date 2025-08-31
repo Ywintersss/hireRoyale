@@ -16,6 +16,7 @@ import {
     useDisclosure,
     Badge,
     Tooltip,
+    addToast,
 } from "@heroui/react";
 import {
     ChevronLeft,
@@ -29,24 +30,16 @@ import {
     MapPin,
     Clock,
     Building,
-    GraduationCap,
     Phone,
-    Mail,
     Calendar
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
-import { User as UserSchema, UserEvent, JobRequirementData } from '../../../../../types/types';
+import { User as UserSchema, UserEvent, JobRequirementData, ConnectionRequest } from '../../../../../types/types';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import RecruiterProfileModal from '@/components/LobbyRecruiterProfile';
 import { socket } from '@/lib/socket';
 import { useRouter } from 'next/navigation';
-
-interface ConnectionRequest {
-    from: UserSchema;
-    to: UserSchema;
-    status: 'pending' | 'accepted' | 'declined';
-    message?: string;
-}
+import { ConnectionData, RoomData } from '../../../../../../backend/src/types/types';
 
 const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
     const [leftExpanded, setLeftExpanded] = useState(false);
@@ -86,21 +79,100 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
     })
 
     const createConnectionRequestMutation = useMutation({
-        mutationFn: async ({ userId, eventId }: { userId: string, eventId: string }) => {
-            return fetch(`http://localhost:8000/rooms/create-room`, {
+        mutationFn: async ({ applicantId, recruiterId }: { applicantId: string, recruiterId: string }) => {
+            const response = await fetch(`http://localhost:8000/rooms/create-connection`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    userId: userId,
-                    eventId: eventId
+                    applicantId: applicantId,
+                    recruiterId: recruiterId,
+                    eventId: slug
                 }),
                 credentials: 'include'
             })
+
+            return response.json()
+        },
+        onSuccess: (data) => {
+            addToast({
+                title: "Request Sent",
+                description: "Connection request has been sent to the recruiter!",
+                timeout: 3000,
+                shouldShowTimeoutProgress: true,
+            })
+            socket?.emit('send-connection-request', { user: session?.user, connection: data.connection })
         }
 
     })
+
+    const createRoomMutation = useMutation({
+        mutationFn: async ({ connectingUserId, connection }: { connectingUserId: string, connection: ConnectionData }): Promise<{ roomId: string, room: RoomData }> => {
+            const response = await fetch(`http://localhost:8000/rooms/create-room`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    applicantId: connectingUserId,
+                    recruiterId: connection.recruiterId,
+                    lobbyId: connection.lobbyId
+                }),
+                credentials: 'include'
+            })
+
+            return response.json()
+        },
+        onSuccess: (data: { roomId: string, room: RoomData }) => {
+            socket.emit('accept-connection-request', { roomId: data.roomId, roomData: data.room })
+            router.push(`/events/room/${data.roomId}`)
+        }
+    })
+
+    const acceptConnection = (connectingUser: UserSchema, connection: ConnectionData) => {
+        createRoomMutation.mutate({
+            connectingUserId: connectingUser.id,
+            connection: connection
+        })
+    }
+
+    useEffect(() => {
+        const handler = (data: { roomId: string }) => {
+            router.push(`/events/room/${data.roomId}`)
+        };
+
+        socket?.on('connection-accepted', handler)
+
+        return () => {
+            socket.off("connection-accepted", handler); // cleanup
+        };
+    }, []);
+
+    useEffect(() => {
+        const handler = (data: any) => {
+            addToast({
+                title: `Request Connection from ${data.connectingUser.name}`,
+                description: `${data.connectingUser.name} wants to connect with you!`,
+                timeout: 3000,
+                shouldShowTimeoutProgress: true,
+                color: 'primary',
+                endContent: (
+                    <Button size='sm' variant='flat' color='primary' onPress={() => {
+                        acceptConnection(data.connectingUser, data.connection)
+                    }}>
+                        Connect
+                    </Button>
+                )
+            })
+        };
+
+        socket?.on('receive-connection-request', handler)
+
+        return () => {
+            socket.off("receive-connection-request", handler); // cleanup
+        };
+    }, []);
 
     useEffect(() => {
         if (isSuccess) {
@@ -141,6 +213,10 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
         setConnectionRequests(prev => [...prev, newRequest]);
 
         // Have recruiter accept connection
+        createConnectionRequestMutation.mutate({
+            recruiterId: recruiter.id,
+            applicantId: currentUser?.id as string
+        })
 
     };
 
@@ -162,13 +238,13 @@ const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
             })
         }
         )
-        .then(response => response.json())
-        .then(data => {
-            console.log('Lobby left:', data);
-            socket.emit('leave_lobby', eventData.id);
-            router.push('/events')
-        })
-        .catch(error => console.error('Error leaving lobby:', error));
+            .then(response => response.json())
+            .then(data => {
+                console.log('Lobby left:', data);
+                socket.emit('leave_lobby', eventData.id);
+                router.push('/events')
+            })
+            .catch(error => console.error('Error leaving lobby:', error));
     }
 
     const handleOpenRecruiterProfile = (recruiter: UserSchema, job: JobRequirementData) => {

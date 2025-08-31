@@ -11,7 +11,7 @@ const EventsListPage = () => {
     const queryClient = useQueryClient()
     const { data: currentUser, error, isPending } = authClient.useSession();
 
-    const { data: events, isLoading } = useQuery({
+    const { data: events, isLoading, isSuccess } = useQuery({
         queryKey: ['events'], queryFn: async () => {
             const response = await fetch('http://localhost:8000/events/all')
             return response.json()
@@ -184,7 +184,7 @@ const EventsListPage = () => {
 
     return (
         <>
-            {!isLoading &&
+            {isSuccess &&
                 <EventsPage
                     currentUser={currentUser?.user}
                     events={events.events}

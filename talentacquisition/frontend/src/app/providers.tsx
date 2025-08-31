@@ -1,5 +1,5 @@
 'use client'
-
+import { ToastProvider } from "@heroui/toast";
 import { HeroUIProvider } from '@heroui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import posthog from 'posthog-js'
@@ -15,12 +15,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 capture_pageview: true,
                 capture_pageleave: true,
             })
-        } catch {}
+        } catch { }
     }, [])
 
     return (
         <QueryClientProvider client={queryClient}>
             <HeroUIProvider>
+                <ToastProvider />
                 {children}
             </HeroUIProvider>
         </QueryClientProvider>

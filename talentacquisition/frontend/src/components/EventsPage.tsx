@@ -50,7 +50,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
         let filtered = events;
 
         if (isUser) {
-            filtered = events.filter(event => event.status === 'Approved');
+            filtered = events.filter(event => event.status === 'Approved' || event.status === "active");
         }
 
         // Apply additional filters
@@ -219,15 +219,15 @@ const EventsPage: React.FC<EventsPageProps> = ({
     //Everything below is testing
 
     useEffect(() => {
-        socket.on('connect', () => {
+        socket?.on('connect', () => {
             console.log('Connected to socket server');
         })
 
-        socket.on('user_joined', (socketId: string) => {
+        socket?.on('user_joined', (socketId: string) => {
             console.log('User joined:', socketId);
         })
 
-        socket.on('user_left', (socketId: string) => {
+        socket?.on('user_left', (socketId: string) => {
             console.log('User left:', socketId);
         })
     }, [])
@@ -261,20 +261,20 @@ const EventsPage: React.FC<EventsPageProps> = ({
                 eventId: eventId,
             })
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Lobby found:', data);
+            .then(response => response.json())
+            .then(data => {
+                console.log('Lobby found:', data);
 
-            if (data.connection) {
-                console.log('Lobby ID:', data.connection.lobbyId);
-                const roomId = data.connection.lobbyId
-                socket.emit('join_lobby', roomId);
-            }
+                if (data.connection) {
+                    console.log('Lobby ID:', data.connection.lobbyId);
+                    const roomId = data.connection.lobbyId
+                    socket.emit('join_lobby', roomId, currentUser.id);
+                }
 
-            router.push(`events/lobby/${eventId}`)
-            // socket.on('user_joined', () => router.push(`/lobby/${eventId}`))
-        })
-        .catch(error => console.error('Error joining lobby:', error));
+                router.push(`events/lobby/${eventId}`)
+                // socket.on('user_joined', () => router.push(`/lobby/${eventId}`))
+            })
+            .catch(error => console.error('Error joining lobby:', error));
     }
 
 

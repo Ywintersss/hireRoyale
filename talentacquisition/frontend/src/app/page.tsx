@@ -180,14 +180,13 @@ export default function HomePage() {
 
     return (
         <div
-            className={`transition-all min-h-screen duration-700 ${
-                isDarkMode
-                    ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900'
-                    : 'bg-gradient-to-br from-[#0F172A] via-[#1E3A8A] via-[#0EA5E9] to-[#F97316]'
-            }`}
+            className={`transition-all w-full min-h-screen duration-700 ${isDarkMode
+                ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900'
+                : 'bg-gradient-to-br from-[#0F172A] via-[#1E3A8A] via-[#0EA5E9] to-[#F97316]'
+                }`}
         >
             {/* Navigation */}
-            <nav className=' top-0 w-full z-50 bg-white/5 backdrop-blur-xl border-b border-white/10'>
+            <nav className='top-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10'>
                 <div className='p-4'>
                     <div className='flex items-center justify-between '>
                         <motion.div
@@ -405,11 +404,10 @@ export default function HomePage() {
                             >
                                 <div className='bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300'>
                                     <div
-                                        className={`text-4xl mb-3 ${
-                                            tech.name === 'AI/ML'
-                                                ? 'text-2xl'
-                                                : ''
-                                        }`}
+                                        className={`text-4xl mb-3 ${tech.name === 'AI/ML'
+                                            ? 'text-2xl'
+                                            : ''
+                                            }`}
                                     >
                                         {tech.icon}
                                     </div>

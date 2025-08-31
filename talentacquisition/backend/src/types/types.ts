@@ -7,3 +7,16 @@ export interface AuthenticatedRequest extends Request {
         session: Session | null;
     };
 }
+
+export interface RoomData {
+    applicantId: string;
+    recruiterId: string;
+    lobbyId: string
+}
+
+export interface ConnectionData {
+    eventId: string;
+    applicantId: string;
+    recruiterId: string;
+    lobbyId: string
+}
