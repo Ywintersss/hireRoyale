@@ -1,6 +1,8 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import AIService, { AIInsights, PlayerStats, ResumeAnalysis } from '../services/AIService';
+import type { Event, UserEvent } from '../../../frontend/types/types.ts';
+import AIService, { type AIInsights, type PlayerStats, type ResumeAnalysis } from '../services/AIService.ts';
+import { getSession } from '../lib/auth.ts';
 
 const prisma = new PrismaClient();
 const aiService = AIService.getInstance();
@@ -9,10 +11,16 @@ export class AIController {
     /**
      * Analyze event with AI and provide comprehensive insights
      */
-    public async analyzeEvent(req: Request, res: Response): Promise<void> {
+    public async analyzeEvent(req: Request, res: Response) {
         try {
             const { eventId } = req.params;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -37,7 +45,7 @@ export class AIController {
             }
 
             // Extract participants
-            const participants = event.participants.map(p => p.user);
+            const participants = event.participants.map((p: UserEvent) => p.user);
 
             // Analyze with AI
             const insights = await aiService.analyzeEvent(event, participants);
@@ -55,10 +63,16 @@ export class AIController {
     /**
      * Generate player stats from resume data
      */
-    public async generatePlayerStats(req: Request, res: Response): Promise<void> {
+    public async generatePlayerStats(req: Request, res: Response) {
         try {
             const { resumeData } = req.body;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -86,10 +100,16 @@ export class AIController {
     /**
      * Analyze resume text and extract structured data
      */
-    public async analyzeResume(req: Request, res: Response): Promise<void> {
+    public async analyzeResume(req: Request, res: Response) {
         try {
             const { resumeText } = req.body;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -117,10 +137,16 @@ export class AIController {
     /**
      * Get market intelligence for specific industry and skills
      */
-    public async getMarketIntelligence(req: Request, res: Response): Promise<void> {
+    public async getMarketIntelligence(req: Request, res: Response) {
         try {
             const { industry, skills } = req.query;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -146,10 +172,16 @@ export class AIController {
     /**
      * Get AI-powered hiring recommendations
      */
-    public async getHiringRecommendations(req: Request, res: Response): Promise<void> {
+    public async getHiringRecommendations(req: Request, res: Response) {
         try {
             const { eventId } = req.params;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -174,7 +206,7 @@ export class AIController {
             }
 
             // Get AI insights
-            const participants = event.participants.map(p => p.user);
+            const participants = event.participants.map((p: UserEvent) => p.user);
             const insights = await aiService.analyzeEvent(event, participants);
 
             // Generate recommendations based on insights
@@ -212,9 +244,15 @@ export class AIController {
     /**
      * Get real-time AI insights dashboard data
      */
-    public async getDashboardInsights(req: Request, res: Response): Promise<void> {
+    public async getDashboardInsights(req: Request, res: Response) {
         try {
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -241,8 +279,8 @@ export class AIController {
             // Generate dashboard insights
             const dashboardData = {
                 totalEvents: userEvents.length,
-                activeEvents: userEvents.filter(e => e.status === 'Approved').length,
-                totalParticipants: userEvents.reduce((sum, e) => sum + e.participants.length, 0),
+                activeEvents: userEvents.filter((e: Event) => e.status === 'Approved').length,
+                totalParticipants: userEvents.reduce((sum: number, e: Event) => sum + e.participants.length, 0),
                 averageSuccessRate: 85, // Simulated
                 topSkills: ['JavaScript', 'React', 'Node.js', 'Python', 'AWS'],
                 marketTrends: [
@@ -270,10 +308,16 @@ export class AIController {
     /**
      * Upload and analyze resume file
      */
-    public async uploadAndAnalyzeResume(req: Request, res: Response): Promise<void> {
+    public async uploadAndAnalyzeResume(req: Request, res: Response) {
         try {
             const { file } = req;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
@@ -313,10 +357,16 @@ export class AIController {
     /**
      * Get AI-powered interview questions
      */
-    public async getInterviewQuestions(req: Request, res: Response): Promise<void> {
+    public async getInterviewQuestions(req: Request, res: Response) {
         try {
             const { eventId, candidateId } = req.params;
-            const userId = req.user?.id;
+            const session = await getSession(req)
+
+            if (!session?.user) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const userId = session.user.id;
 
             if (!userId) {
                 res.status(401).json({ error: 'Unauthorized' });
