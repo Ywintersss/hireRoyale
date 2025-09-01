@@ -1,0 +1,7 @@
+node_modules
+db.sqlite
+
+/app/generated/prisma
+.env
+
+assets

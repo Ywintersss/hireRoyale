@@ -1,0 +1,334 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  firstName         String
+  lastName          String
+  avatar            String?
+  role              String
+  department        String
+  startDate         DateTime
+  status            UserStatus @default(ACTIVE)
+  onboardingStep    Int      @default(1)
+  totalSteps        Int      @default(8)
+  points            Int      @default(0)
+  level             Int      @default(1)
+  experience        Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  tasks             Task[]
+  badges            UserBadge[]
+  meetings          Meeting[]
+  aiInteractions    AIInteraction[]
+  progressLogs      ProgressLog[]
+  notifications     Notification[]
+  teamMembers       TeamMember[]
+  learningPaths     LearningPath[]
+
+  @@map("users")
+}
+
+model Task {
+  id              String      @id @default(cuid())
+  title           String
+  description     String?
+  status          TaskStatus  @default(PENDING)
+  priority        Priority    @default(MEDIUM)
+  estimatedTime   Int         // in minutes
+  actualTime      Int?        // in minutes
+  dueDate         DateTime?
+  completedAt     DateTime?
+  order           Int
+  category        String
+  icon            String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subtasks        Subtask[]
+  attachments     Attachment[]
+
+  @@map("tasks")
+}
+
+model Subtask {
+  id          String    @id @default(cuid())
+  title       String
+  status      TaskStatus @default(PENDING)
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("subtasks")
+}
+
+model Badge {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String
+  icon        String
+  rarity      Rarity    @default(COMMON)
+  points      Int
+  category    String
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  earnedAt  DateTime @default(now())
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Meeting {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  type        MeetingType   @default(ONE_ON_ONE)
+  location    String?
+  isVirtual   Boolean       @default(false)
+  meetingUrl  String?
+  status      MeetingStatus @default(SCHEDULED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendees   MeetingAttendee[]
+
+  @@map("meetings")
+}
+
+model MeetingAttendee {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  role      String
+  avatar    String?
+  status    AttendeeStatus @default(INVITED)
+
+  // Relations
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@map("meeting_attendees")
+}
+
+model AIInteraction {
+  id          String    @id @default(cuid())
+  message     String
+  response    String
+  confidence  Float
+  category    String
+  timestamp   DateTime  @default(now())
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_interactions")
+}
+
+model ProgressLog {
+  id          String    @id @default(cuid())
+  step        Int
+  percentage  Float
+  timestamp   DateTime  @default(now())
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("progress_logs")
+}
+
+model Notification {
+  id          String            @id @default(cuid())
+  title       String
+  message     String
+  type        NotificationType  @default(INFO)
+  isRead      Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+
+  // Relations
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model TeamMember {
+  id          String    @id @default(cuid())
+  name        String
+  role        String
+  department  String
+  avatar      String?
+  status      UserStatus @default(ACTIVE)
+  isManager   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
+}
+
+model LearningPath {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  role        String
+  category    String
+  duration    Int       // in minutes
+  progress    Float     @default(0)
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modules     LearningModule[]
+
+  @@map("learning_paths")
+}
+
+model LearningModule {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        ModuleType @default(VIDEO)
+  url         String?
+  duration    Int       // in minutes
+  progress    Float     @default(0)
+  isCompleted Boolean   @default(false)
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  learningPathId String
+  learningPath   LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+
+  @@map("learning_modules")
+}
+
+model Attachment {
+  id          String    @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  taskId      String
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+// Enums
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Rarity {
+  COMMON
+  RARE
+  EPIC
+  LEGENDARY
+}
+
+enum MeetingType {
+  ONE_ON_ONE
+  TEAM
+  TRAINING
+  REVIEW
+  ORIENTATION
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendeeStatus {
+  INVITED
+  CONFIRMED
+  DECLINED
+  ATTENDED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  REMINDER
+}
+
+enum ModuleType {
+  VIDEO
+  DOCUMENT
+  QUIZ
+  INTERACTIVE
+  ASSESSMENT
+}
+
