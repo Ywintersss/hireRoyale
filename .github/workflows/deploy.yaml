@@ -64,7 +64,7 @@ jobs:
             # ====== CONFIG ======
             CONTAINER_NAME="hireroyalebackend"
             IMAGE_NAME="hireroyalebackend"
-            DOCKER_USERNAME="yourdockerusername"   # replace or export as env var
+            DOCKER_USERNAME=${{ env.DOCKER_USERNAME }}   
             HOST_PORT=7000
             CONTAINER_PORT=8000
             # ====================
