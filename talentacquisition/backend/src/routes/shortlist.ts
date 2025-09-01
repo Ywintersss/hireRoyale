@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { scoreResumes } from '../controllers/ShortlistController.ts'
+import { scoreResumes } from '../controllers/ShortlistController.js'
 
 const router = Router()
 

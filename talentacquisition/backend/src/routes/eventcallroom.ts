@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { UserConnectionController } from '../controllers/UserConnectionController.ts'
+import { UserConnectionController } from '../controllers/UserConnectionController.js'
 
 const router = Router()
 export const connections = new UserConnectionController()

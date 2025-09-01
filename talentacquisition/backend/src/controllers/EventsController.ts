@@ -1,8 +1,8 @@
 import { PrismaClient } from '../../app/generated/prisma/index.js';
 import type { Request, Response } from 'express'
-import { auth } from '../lib/auth.ts';
+import { auth } from '../lib/auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
-import { scheduleLobbyCreation } from '../timed/timedLobbyCreation.ts';
+import { scheduleLobbyCreation } from '../timed/timedLobbyCreation.js';
 
 const prisma = new PrismaClient()
 

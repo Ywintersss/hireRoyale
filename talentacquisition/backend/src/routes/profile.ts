@@ -1,7 +1,7 @@
 import { Router } from 'express'
 
-import { getUserProfile, updateUser, uploadResume, updateResume } from '../controllers/ProfileController.ts'
-import { upload } from '../middleware/uploads.ts'
+import { getUserProfile, updateUser, uploadResume, updateResume } from '../controllers/ProfileController.js'
+import { upload } from '../middleware/uploads.js'
 
 const router = Router()
 

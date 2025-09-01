@@ -1,4 +1,4 @@
-import { Event, User } from '@prisma/client';
+import { Event, User } from '../../app/generated/prisma/index.js';
 
 export interface AIInsights {
     successProbability: number;

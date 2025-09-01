@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import AIController from '../controllers/AIController.ts';
-import { authenticateToken } from '../middleware/auth';
+import AIController from '../controllers/AIController.js';
+// import { authenticateToken } from '../middleware/auth.ts';
 
 const router = Router();
 const aiController = new AIController();
 
 // Apply authentication middleware to all AI routes
-router.use(authenticateToken);
+// router.use(authenticateToken);
 
 /**
  * @route GET /api/ai/analyze-event/:eventId

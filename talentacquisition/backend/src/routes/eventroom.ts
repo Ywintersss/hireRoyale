@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { joinAndSyncEventLobbyConnection, leaveAndSyncEventLobbyConnection } from '../controllers/EventConnectionController.ts'
+import { joinAndSyncEventLobbyConnection, leaveAndSyncEventLobbyConnection } from '../controllers/EventConnectionController.js'
 
 const router = Router()
 

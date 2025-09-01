@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getEvents, createEvent, updateEvent, deleteEvent, joinEvent, leaveEvent, getOneEvent, createEventLobby, createJobPosting, getJobs } from '../controllers/EventsController.ts'
+import { getEvents, createEvent, updateEvent, deleteEvent, joinEvent, leaveEvent, getOneEvent, createEventLobby, createJobPosting, getJobs } from '../controllers/EventsController.js'
 
 const router = Router()
 

@@ -39,7 +39,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import RecruiterProfileModal from '@/components/LobbyRecruiterProfile';
 import { socket } from '@/lib/socket';
 import { useRouter } from 'next/navigation';
-import { ConnectionData, RoomData } from '../../../../../../backend/src/types/types';
+import { ConnectionData, RoomData } from '../../../../../../backend/src/types/types copy';
 
 const EventLobby = ({ params }: { params: Promise<{ slug: string }> }) => {
     const [leftExpanded, setLeftExpanded] = useState(false);
