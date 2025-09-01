@@ -89,30 +89,6 @@ export default function VideoRoomPage() {
         let durationInterval: NodeJS.Timeout
         let initialized = false
 
-        try {
-            // Try to get user media, but don’t block room join if it fails
-            navigator.mediaDevices.getUserMedia({
-                video: true,
-                audio: true
-            }).then((data) => {
-                setLocalStream(data)
-                if (localVideoRef.current) {
-                    localVideoRef.current.srcObject = data
-                }
-            })
-
-            // Get available devices only if permissions granted
-            navigator.mediaDevices.enumerateDevices().then((devices) => {
-                setAvailableDevices({
-                    video: devices.filter(device => device.kind === 'videoinput'),
-                    audio: devices.filter(device => device.kind === 'audioinput')
-                })
-
-            })
-        } catch (err) {
-            console.warn('No camera/mic access. Joining room without media.', err)
-        }
-
         const initializeRoom = async () => {
             if (initialized) return
             initialized = true
@@ -121,6 +97,27 @@ export default function VideoRoomPage() {
                 console.log('Session:', session)
 
                 let stream: MediaStream | null = null
+
+                try {
+                    // Try to get user media, but don’t block room join if it fails
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    })
+                    setLocalStream(stream)
+                    if (localVideoRef.current) {
+                        localVideoRef.current.srcObject = stream
+                    }
+
+                    // Get available devices only if permissions granted
+                    const devices = await navigator.mediaDevices.enumerateDevices()
+                    setAvailableDevices({
+                        video: devices.filter(device => device.kind === 'videoinput'),
+                        audio: devices.filter(device => device.kind === 'audioinput')
+                    })
+                } catch (err) {
+                    console.warn('No camera/mic access. Joining room without media.', err)
+                }
 
                 // ✅ Always join the room, with or without media
                 socket.emit('join-room', roomId, {
