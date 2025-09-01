@@ -11,7 +11,7 @@ jobs:
 
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }} # private key, stored as GitHub secret
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }} # private key, stored as GitHub secret
       IMAGE_NAME: hireroyalebackend
       HOST_PORT: 7000
       CONTAINER_PORT: 8000
@@ -26,7 +26,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           username: ${{ env.DOCKER_USERNAME }}
-          password: ${{ env.DOCKER_TOKEN }}
+          password: ${{ env.DOCKER_PASSWORD }}
 
       # 3️⃣ Build and push Docker image
       - name: Build and push Docker image
