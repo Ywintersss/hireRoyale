@@ -88,7 +88,7 @@ jobs:
             docker pull $DOCKER_USERNAME/$IMAGE_NAME:latest
 
             echo ">>> Running new container..."
-            docker run -d -p $HOST_PORT:$CONTAINER_PORT $DOCKER_USERNAME/$IMAGE_NAME:latest
+            docker run -d -p $HOST_PORT:$CONTAINER_PORT --env-file /app/.env $DOCKER_USERNAME/$IMAGE_NAME:latest
 
             echo ">>> Deployment complete!"
             docker ps
