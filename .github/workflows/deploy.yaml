@@ -10,12 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install Node dependencies and generate Prisma client
-      # working-directory: talentacquisition/backend
-      run: |
-        cd talentacquisition/backend
-        npm install
-        npx prisma generate
+      - name: Debug repo structure
+        run: |
+          pwd
+          ls -R
+
+
+      - name: Install Node dependencies and generate Prisma client
+        # working-directory: talentacquisition/backend
+        run: |
+          cd talentacquisition/backend
+          npm install
+          npx prisma generate
   docker-build-and-push:
     needs: generate-prisma-client
     runs-on: ubuntu-latest
