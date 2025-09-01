@@ -143,5 +143,5 @@ router.patch('/modules/:id/progress', validateRequest(z.object({
   }
 })
 
-export default router
+export default learningRouter
 

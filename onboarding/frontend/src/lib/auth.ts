@@ -1,102 +1,92 @@
-import 'dotenv/config'
-import { betterAuth } from "better-auth";
-import { APIError } from 'better-auth/api';
-import { prismaAdapter } from "better-auth/adapters/prisma";
-// If your Prisma file is located elsewhere, you can change the path
-import { PrismaClient } from "../../app/generated/prisma/client.js";
-import { customSession, emailOTP } from 'better-auth/plugins';
-import { fromNodeHeaders } from 'better-auth/node';
-import type { AuthenticatedRequest } from '../types/types.ts';
-
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
 export const auth = betterAuth({
-    user: {
-        additionalFields: {
-            roleId: {
-                type: "string",
-                required: false,
-                input: false,
-            },
-            roleName: {
-                type: 'string',
-                required: false,
-                input: true
-            },
-            contact: {
-                type: 'string',
-                input: true
-            },
-            password: {
-                type: 'string',
-                input: true
-            }
-        },
-    },
     database: prismaAdapter(prisma, {
-        provider: "sqlite",
+        provider: 'sqlite',
     }),
     emailAndPassword: {
         enabled: true,
     },
     socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+        },
         github: {
             clientId: process.env.GITHUB_CLIENT_ID as string,
             clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
         },
     },
-    plugins: [
-        customSession(async ({ user, session }) => {
-            const userWithRole = await prisma.user.findUnique({
-                where: { id: user.id },
-                include: { role: true, },
-            });
-            return {
-                user: userWithRole,
-                session,
-            };
-        }),
-    ],
-    databaseHooks: {
-        user: {
-            create: {
-                before:
-                    async (data, ctx) => {
-                        console.log(data)
-                        if (data) {
-                            // Look up the role in Prisma
-                            try {
-                                const role = await prisma.role.findUnique({
-                                    where: { name: data.roleName as string },
-                                });
-                                console.log('role found')
-                                console.log(role)
-
-                                if (!role) {
-                                    throw new APIError("BAD_REQUEST", { message: `Unknown role: ${data.roleName}` });
-                                }
-
-                                return {
-                                    data: {
-                                        ...data,
-                                        roleId: role.id,
-                                        roleName: undefined,
-                                    }
-                                }
-                            } catch (error) {
-                                console.log(error)
-                            }
-
-                        }
-                    },
-
-            }
+    user: {
+        additionalFields: {
+            firstName: {
+                type: 'string',
+                required: false,
+                input: true,
+            },
+            lastName: {
+                type: 'string',
+                required: false,
+                input: true,
+            },
+            role: {
+                type: 'string',
+                required: false,
+                input: true,
+            },
+            department: {
+                type: 'string',
+                required: false,
+                input: true,
+            },
+            avatar: {
+                type: 'string',
+                required: false,
+                input: true,
+            },
+            onboardingStep: {
+                type: 'number',
+                required: false,
+                input: false,
+            },
+            totalSteps: {
+                type: 'number',
+                required: false,
+                input: false,
+            },
+            points: {
+                type: 'number',
+                required: false,
+                input: false,
+            },
+            level: {
+                type: 'number',
+                required: false,
+                input: false,
+            },
+            experience: {
+                type: 'number',
+                required: false,
+                input: false,
+            },
+            startDate: {
+                type: 'date',
+                required: false,
+                input: true,
+            },
+            status: {
+                type: 'string',
+                required: false,
+                input: false,
+            },
         },
     },
+    session: {
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
+        updateAge: 60 * 60 * 24, // 1 day
+    },
 });
-
-export const getSession = (req: AuthenticatedRequest) => {
-    const session = auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
-
-    return session
-};

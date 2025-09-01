@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { auth } from "../lib/auth";
+import { auth } from "../lib/auth"; // Your Better Auth instance
 import { fromNodeHeaders } from "better-auth/node";
 
 // Extend Express Request interface
@@ -7,11 +7,12 @@ declare global {
   namespace Express {
     interface Request {
       user?: any;
+      session?: any;
     }
   }
 }
 
-// Required authentication middleware (replaces your authMiddleware)
+// Required authentication middleware
 export async function authenticateToken(req: Request, res: Response, next: NextFunction) {
     try {
         const session = await auth.api.getSession({
@@ -26,6 +27,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
         }
 
         req.user = session.user;
+        req.session = session.session;
         next();
     } catch (err) {
         console.error("Auth error:", err);
@@ -45,6 +47,7 @@ export async function optionalAuthMiddleware(req: Request, res: Response, next: 
 
         if (session && session.user) {
             req.user = session.user;
+            req.session = session.session;
         }
 
         next();
@@ -56,3 +59,14 @@ export async function optionalAuthMiddleware(req: Request, res: Response, next: 
 
 // Alias for backward compatibility
 export const authMiddleware = authenticateToken;
+
+// Helper function to get session
+export const getSession = async (req: Request) => {
+    try {
+        return await auth.api.getSession({
+            headers: fromNodeHeaders(req.headers),
+        });
+    } catch (error) {
+        return null;
+    }
+};

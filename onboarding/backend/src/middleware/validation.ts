@@ -18,7 +18,7 @@ export const validateRequest = (schema: z.ZodSchema) => {
       req.query = validatedData.query
       req.params = validatedData.params
 
-      return next()
+      next()
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
@@ -45,7 +45,6 @@ export const validateQuery = (schema: z.ZodSchema) => {
       const validatedQuery = schema.parse(req.query)
       req.query = validatedQuery as import('qs').ParsedQs
       next()
-      return
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
@@ -72,7 +71,6 @@ export const validateParams = (schema: z.ZodSchema) => {
       const validatedParams = schema.parse(req.params)
       req.params = validatedParams as import('express-serve-static-core').ParamsDictionary
       next()
-      return
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
@@ -92,4 +90,3 @@ export const validateParams = (schema: z.ZodSchema) => {
     }
   }
 }
-

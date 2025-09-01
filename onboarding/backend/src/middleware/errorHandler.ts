@@ -1,5 +1,26 @@
 import { Request, Response, NextFunction } from 'express'
-import { logger } from '../server'
+import winston from 'winston'
+
+// Create logger if not imported from server
+const logger = winston.createLogger({
+  level: process.env['LOG_LEVEL'] || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
+    new winston.transports.File({ 
+      filename: './logs/app.log' 
+    })
+  ]
+})
 
 export interface AppError extends Error {
   statusCode?: number
@@ -44,17 +65,20 @@ export const errorHandler = (
   } else if (error.name === 'PrismaClientUnknownRequestError') {
     statusCode = 500
     message = 'Database error'
+  } else if (error.name === 'PrismaClientValidationError') {
+    statusCode = 400
+    message = 'Invalid data provided'
   }
 
   // Don't leak error details in production
-  if (process.env['NODE_ENV'] === 'production' && statusCode === 500) {
+  if (process.env.NODE_ENV === 'production' && statusCode === 500) {
     message = 'Internal server error'
   }
 
   res.status(statusCode).json({
     success: false,
     error: message,
-    ...(process.env['NODE_ENV'] === 'development' && {
+    ...(process.env.NODE_ENV === 'development' && {
       stack: error.stack,
       details: error.message
     })
@@ -77,4 +101,3 @@ export const asyncHandler = (fn: Function) => {
     Promise.resolve(fn(req, res, next)).catch(next)
   }
 }
-
