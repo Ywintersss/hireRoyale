@@ -6,7 +6,18 @@ on:
       - main
 
 jobs:
+  generate-prisma-client:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install Node dependencies and generate Prisma client
+      working-directory: talentacquisition/backend
+      run: |
+        npm install
+        npx prisma generate
+
   docker-build-and-push:
+    needs: generate-prisma-client
     runs-on: ubuntu-latest
 
     env:
