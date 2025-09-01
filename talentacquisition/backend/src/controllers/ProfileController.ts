@@ -1,8 +1,8 @@
 import { PrismaClient } from '../../app/generated/prisma/index.js';
 import type { Request, Response } from 'express'
-import type { AuthenticatedRequest } from '../types/types.ts';
-import { auth, getSession } from '../lib/auth.ts';
-import { __dirname } from '../lib/pathHelper.ts';
+import type { AuthenticatedRequest } from '../types/types.js';
+import { auth, getSession } from '../lib/auth.js';
+import { __dirname } from '../lib/pathHelper.js';
 import fs from 'fs';
 import path from 'path';
 

@@ -5,3 +5,4 @@ db.sqlite
 .env
 
 assets
+/dist

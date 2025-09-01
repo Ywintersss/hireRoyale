@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import type { Event, UserEvent } from '../types/types.ts';
-import AIService, { type AIInsights, type PlayerStats, type ResumeAnalysis } from '../services/AIService.ts';
-import { getSession } from '../lib/auth.ts';
+import AIService, { type AIInsights, type PlayerStats, type ResumeAnalysis } from '../services/AIService.js';
+import { getSession } from '../lib/auth.js';
 
 const prisma = new PrismaClient();
 const aiService = AIService.getInstance();

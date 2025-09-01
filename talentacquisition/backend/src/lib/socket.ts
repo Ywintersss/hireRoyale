@@ -1,6 +1,5 @@
 import { Server } from "socket.io";
-import type { PeerMetadata, User } from "../../../frontend/types/types.ts";
-import type { ConnectionData, RoomData } from "../types/types.ts";
+import type { ConnectionData, RoomData, PeerMetadata, User } from "../types/types.ts";
 
 let io: Server;
 

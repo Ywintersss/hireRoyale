@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
-import { auth } from '../lib/auth.ts';
-import { getSession } from '../lib/auth.ts';
+import { auth } from '../lib/auth.js';
+import { getSession } from '../lib/auth.js';
 import type { ConnectionData, RoomData } from '../types/types.ts';
 import { PrismaClient } from '../../app/generated/prisma/index.js';
 

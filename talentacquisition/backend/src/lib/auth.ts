@@ -6,7 +6,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "../../app/generated/prisma/client.js";
 import { customSession, emailOTP } from 'better-auth/plugins';
 import { fromNodeHeaders } from 'better-auth/node';
-import type { AuthenticatedRequest } from '../types/types.ts';
+import type { AuthenticatedRequest } from '../types/types.js';
 
 
 const prisma = new PrismaClient();
