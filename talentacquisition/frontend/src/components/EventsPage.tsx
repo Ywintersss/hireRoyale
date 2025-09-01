@@ -37,6 +37,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
     onCreateJobRequirement,
 }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
+    const [isCreator, setIsCreator] = useState(false)
     const [jobPostingEventId, setJobPostingEventId] = useState<string>('')
     const [jobCreationStatus, setJobCreationStatus] = useState<boolean>(false)
     const [isHover, setIsHover] = useState<string | null>(null)
@@ -75,7 +76,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
         try {
             // Simulate AI analysis - replace with actual API call
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             const mockAIInsights: AIInsights = {
                 successProbability: Math.floor(Math.random() * 30) + 70, // 70-100%
                 skillMatch: Math.floor(Math.random() * 20) + 80, // 80-100%
@@ -204,6 +205,7 @@ const EventsPage: React.FC<EventsPageProps> = ({
             await onCreateEvent(formData);
             setIsCreateModalOpen(false);
             resetForm();
+            onOpen()
         } catch (error) {
             console.error('Error creating event:', error);
         } finally {
@@ -393,19 +395,19 @@ const EventsPage: React.FC<EventsPageProps> = ({
                             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25"></div>
                             <div className="relative bg-white rounded-lg p-3 shadow-lg">
                                 <Brain className="h-8 w-8 text-blue-600" />
-                                </div>
+                            </div>
                         </div>
                         <div>
-                                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 AI-Powered Events
-                        </h1>
+                            </h1>
                             <p className="text-gray-600 mt-2 flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-yellow-500" />
-                            {isUser
+                                {isUser
                                     ? 'Discover opportunities with intelligent matching'
                                     : 'Create events with AI-driven insights'
-                            }
-                        </p>
+                                }
+                            </p>
                         </div>
                     </div>
 
@@ -529,11 +531,11 @@ const EventsPage: React.FC<EventsPageProps> = ({
                                                     )}
                                                     {event.industry && (
                                                         <Chip
-                                                                size="sm"
+                                                            size="sm"
                                                             variant="flat"
                                                             style={{ backgroundColor: '#F0F9FF', color: '#0EA5E9' }}
                                                             startContent={getEventTypeIcon(event.industry)}
-                                                            >
+                                                        >
                                                             {event.industry}
                                                         </Chip>
                                                     )}

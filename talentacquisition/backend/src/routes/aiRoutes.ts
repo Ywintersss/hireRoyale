@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import AIController from '../controllers/AIController';
+import AIController from '../controllers/AIController.ts';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();

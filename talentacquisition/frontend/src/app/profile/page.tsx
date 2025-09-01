@@ -1,49 +1,53 @@
 'use client'
-import React, { useEffect, useState } from 'react';
-import { upload } from '../../../../backend/src/middleware/uploads';
-import { updateResume } from '../../../../backend/src/controllers/ProfileController';
 import { authClient } from '@/lib/auth-client';
+import { normalizeCommaSeparated, normalizeNulls } from '@/lib/utils';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
+    Avatar,
+    Badge,
     Button,
-    Input,
     Card,
     CardBody,
     CardHeader,
-    Divider,
-    Textarea,
     Chip,
-    Avatar,
+    Input,
     Progress,
-    Badge,
     Select,
-    SelectItem
+    SelectItem,
+    Textarea
 } from "@heroui/react";
-import { 
-    User, 
-    Mail, 
-    Phone, 
-    MapPin, 
-    Briefcase, 
-    Upload, 
-    FileText, 
-    Edit3,
-    Calendar,
-    Globe,
-    Linkedin,
-    Github,
+import {
     Award,
-    GraduationCap,
-    Save,
-    X,
+    Briefcase,
+    Building,
+    Calendar,
     CheckCircle,
-    Building
+    Edit3,
+    FileText,
+    Github,
+    Globe,
+    GraduationCap,
+    Linkedin,
+    Loader2,
+    Mail,
+    MapPin,
+    Phone,
+    Save,
+    Upload,
+    User,
+    X
 } from 'lucide-react';
-import { normalizeCommaSeparated, normalizeNulls } from '@/lib/utils';
+import { WorkerMessageHandler } from "pdfjs-dist/build/pdf.worker.min.mjs";
+import React, { useEffect, useState } from 'react';
+import { pdfjs } from "react-pdf";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `${window.location.origin}/pdf.worker.min.js`;
 
 const UserProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [resumeFile, setResumeFile] = useState<File | null>(null);
     const [resumeUploaded, setResumeUploaded] = useState(false);
+    const [isProcessingResume, setIsProcessingResume] = useState(false);
     const [profileData, setProfileData] = useState({
         firstName: 'John',
         lastName: 'Doe',
@@ -58,10 +62,184 @@ const UserProfilePage = () => {
         github: 'https://github.com/johndoe',
         skills: ['React', 'Node.js', 'TypeScript', 'AWS', 'MongoDB', 'Python']
     });
-    
+
     const { data: currentUser, error, isPending } = authClient.useSession();
     const isRecruiter = currentUser?.user?.role?.name === 'Recruiter'
     const [editData, setEditData] = useState(profileData);
+
+    const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    // PDF parsing function - dynamically import pdfjs to avoid SSR issues
+    const parsePDF = async (file: File): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const fileReader = new FileReader();
+
+                fileReader.onload = async function () {
+                    try {
+                        const typedarray = new Uint8Array(this.result as ArrayBuffer);
+
+                        // Use pdfjs directly (same as react-pdf uses internally)
+                        const loadingTask = pdfjs.getDocument({
+                            data: typedarray,
+                            verbosity: 0,
+                        });
+
+                        const pdf = await loadingTask.promise;
+                        let fullText = '';
+
+                        // Extract text from each page
+                        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                            const page = await pdf.getPage(pageNum);
+                            const textContent = await page.getTextContent();
+                            const pageText = textContent.items
+                                .map((item: any) => item.str)
+                                .join(' ');
+                            fullText += pageText + '\n';
+                        }
+
+                        resolve(fullText);
+                    } catch (error) {
+                        console.error('PDF parsing error:', error);
+                        reject(new Error(`Failed to parse PDF: ${error.message}`));
+                    }
+                };
+
+                fileReader.onerror = () => reject(new Error('Failed to read PDF file'));
+                fileReader.readAsArrayBuffer(file);
+            } catch (error) {
+                console.error('PDF setup error:', error);
+                reject(new Error('Failed to set up PDF parser: ' + error.message));
+            }
+        });
+    };
+
+    // Enhanced Gemini parsing with better prompt
+    const parseResume = async (resumeText: string) => {
+        const prompt = `
+        Extract structured profile information from this resume text and return it as a JSON object with the following structure:
+
+        {
+            "firstName": "string",
+            "lastName": "string", 
+            "email": "string",
+            "phone": "string",
+            "location": "string (city, state/country)",
+            "title": "string (current or desired job title)",
+            "bio": "string (professional summary, 2-3 sentences)",
+            "experience": "string (e.g., '5+ years', '2-3 years', 'Entry level')",
+            "website": "string (personal website URL if available)",
+            "linkedin": "string (LinkedIn profile URL if available)", 
+            "github": "string (GitHub profile URL if available)",
+            "skills": ["array of technical skills as strings"]
+        }
+
+        Resume text:
+        ${resumeText}
+
+        Important: 
+        - Return only valid JSON, no additional text or formatting
+        - If information is not available, use empty string "" for strings and empty array [] for skills
+        - Extract skills as an array of individual skill strings
+        - For experience, estimate based on work history if exact years not stated
+        - Make the bio a concise professional summary based on the resume content
+        `;
+
+        try {
+            const result = await model.generateContent(prompt);
+            const output = result.response.text();
+
+            // Clean the output to ensure it's valid JSON
+            const cleanOutput = output.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            return JSON.parse(cleanOutput);
+        } catch (error) {
+            console.error('Error parsing resume with Gemini:', error);
+            throw new Error('Failed to parse resume content');
+        }
+    };
+
+    // Process resume: parse PDF + extract data + update profile
+    const processResumeAndUpdateProfile = async (file: File) => {
+        setIsProcessingResume(true);
+
+        try {
+            // Step 1: Parse PDF to text
+            console.log('Extracting text from PDF...');
+            const resumeText = await parsePDF(file);
+
+            if (!resumeText.trim()) {
+                throw new Error('No text could be extracted from the PDF');
+            }
+
+            console.log('PDF text extracted successfully');
+
+            // Step 2: Parse with Gemini
+            console.log('Parsing resume with Gemini...');
+            const extractedData = await parseResume(resumeText);
+
+            console.log('Extracted profile data:', extractedData);
+
+            // Step 3: Merge with existing profile data (keep existing data if extracted is empty)
+            const updatedProfileData = {
+                ...profileData,
+                firstName: extractedData.firstName || profileData.firstName,
+                lastName: extractedData.lastName || profileData.lastName,
+                email: extractedData.email || profileData.email,
+                phone: extractedData.phone || profileData.phone,
+                location: extractedData.location || profileData.location,
+                title: extractedData.title || profileData.title,
+                bio: extractedData.bio || profileData.bio,
+                experience: extractedData.experience || profileData.experience,
+                website: extractedData.website || profileData.website,
+                linkedin: extractedData.linkedin || profileData.linkedin,
+                github: extractedData.github || profileData.github,
+                skills: extractedData.skills && extractedData.skills.length > 0
+                    ? extractedData.skills
+                    : profileData.skills
+            };
+
+            // Step 4: Update profile data in state and backend
+            setProfileData(updatedProfileData);
+            setEditData(updatedProfileData);
+
+            // Update profile in backend
+            await updateUserProfileData(updatedProfileData);
+
+            console.log('Profile updated successfully with resume data');
+
+        } catch (error) {
+            console.error('Error processing resume:', error);
+            alert('Error processing resume: ' + error.message);
+        } finally {
+            setIsProcessingResume(false);
+        }
+    };
+
+    // Separate function to update profile data
+    const updateUserProfileData = async (dataToUpdate = editData) => {
+        const updatedData = {
+            ...dataToUpdate,
+            skills: dataToUpdate.skills.join(',')
+        }
+        try {
+            const response = await fetch('http://localhost:8000/profile/update-profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(updatedData)
+            });
+
+            const result = await response.json();
+            console.log('Profile updated:', result);
+            return result;
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
+        }
+    };
 
     const getUserProfile = () => {
         fetch('http://localhost:8000/profile', {
@@ -71,70 +249,71 @@ const UserProfilePage = () => {
             },
             credentials: 'include'
         })
-        .then(response => response.json())
-        .then(data => {
-            
-            const normalizedData = normalizeNulls(data);
-            
-            const [firstName, ...lastParts] = normalizedData.name.split(" ");
-            const lastName = lastParts.length > 0 ? lastParts.join(" ") : "";
-            
-            const skills = isRecruiter ? "" : normalizedData.skills.split(",")
+            .then(response => response.json())
+            .then(data => {
 
-            const profile = {
-                ...normalizedData,
-                firstName,
-                lastName,
-                skills
-            };
-            
-            if (isRecruiter){
-                profile.company = normalizedData.company
-                profile.industry = normalizedData.industry
-            }
+                const normalizedData = normalizeNulls(data);
 
-            console.log('Profile data:', profile);
+                const [firstName, ...lastParts] = normalizedData.name.split(" ");
+                const lastName = lastParts.length > 0 ? lastParts.join(" ") : "";
 
-            setProfileData(profile);
-            setEditData(profile);
+                const skills = isRecruiter ? "" : normalizedData.skills.split(",")
 
-            if (data.resume) {
-                setResumeUploaded(true);
-                getResume(data.resume.resumeUrl);
-            }
-        })
-        .catch(error => console.error('Error fetching profile data:', error));
+                const profile = {
+                    ...normalizedData,
+                    firstName,
+                    lastName,
+                    skills
+                };
+
+                if (isRecruiter) {
+                    profile.company = normalizedData.company
+                    profile.industry = normalizedData.industry
+                }
+
+                console.log('Profile data:', profile);
+
+                setProfileData(profile);
+                setEditData(profile);
+
+                if (data.resume) {
+                    setResumeUploaded(true);
+                    getResume(data.resume.resumeUrl);
+                }
+            })
+            .catch(error => console.error('Error fetching profile data:', error));
+    };
+
+
+    const handleRemoveSkill = (index: number) => {
+        const updatedSkills = [...(profileData?.skills || [])];
+        updatedSkills.splice(index, 1);
+
+        setProfileData((prev) => ({
+            ...prev,
+            skills: updatedSkills,
+        }));
     };
 
     const getResume = (resumeUrl: string) => {
         fetch(`http://localhost:8000/resume/${resumeUrl}`)
-        .then(response => response.blob())
-        .then(blob => {
-            console.log('Resume data:', blob);
-            const newFile = new File([blob], resumeUrl, { type: blob.type });
+            .then(response => response.blob())
+            .then(blob => {
+                console.log('Resume data:', blob);
+                const newFile = new File([blob], resumeUrl, { type: blob.type });
 
-            setResumeFile(newFile);
-        })
-        .catch(error => console.error('Error fetching resume data:', error));
+                setResumeFile(newFile);
+            })
+            .catch(error => console.error('Error fetching resume data:', error));
     }
 
     const updateUserProfile = () => {
         console.log('Edit data:', editData);
-        
-        fetch('http://localhost:8000/profile/update-profile', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify(editData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Profile updated:', data);
-            getUserProfile();
-        })
-        .catch(error => console.error('Error updating profile:', error));
+        updateUserProfileData(editData)
+            .then(() => {
+                getUserProfile();
+            })
+            .catch(error => console.error('Error updating profile:', error));
     }
 
     const uploadResume = (formData: FormData) => {
@@ -143,12 +322,12 @@ const UserProfilePage = () => {
             credentials: 'include',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Resume uploaded:', data.user.resume);
-            getUserProfile();
-        })
-        .catch(error => console.error('Error updating resume:', error));
+            .then(response => response.json())
+            .then(data => {
+                console.log('Resume uploaded:', data.user.resume);
+                getUserProfile();
+            })
+            .catch(error => console.error('Error updating resume:', error));
     }
 
     const updateResume = (formData: FormData) => {
@@ -157,19 +336,19 @@ const UserProfilePage = () => {
             credentials: 'include',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Resume updated:', data);
-            getUserProfile();
-        })
-        .catch(error => console.error('Error updating resume:', error));
+            .then(response => response.json())
+            .then(data => {
+                console.log('Resume updated:', data);
+                getUserProfile();
+            })
+            .catch(error => console.error('Error updating resume:', error));
     }
 
     useEffect(() => {
         getUserProfile();
     }, [isRecruiter]);
 
-    const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
 
         if (!file) {
@@ -178,21 +357,31 @@ const UserProfilePage = () => {
 
         if (file.type !== 'application/pdf') {
             alert('Please upload a PDF file only');
+            return;
         }
 
         setResumeFile(file);
 
+        // Create FormData for file upload
         const formData = new FormData();
         formData.append("resume", file);
-        
-        if (!resumeUploaded) {
-            uploadResume(formData);
-        } else {
-            updateResume(formData);
+
+        try {
+            // Process resume in parallel with upload
+            const uploadPromise = !resumeUploaded
+                ? uploadResume(formData)
+                : updateResume(formData);
+
+            // Process PDF and update profile data
+            await processResumeAndUpdateProfile(file);
+
+            // Wait for upload to complete
+            await uploadPromise;
+
+        } catch (error) {
+            console.error('Error handling resume upload:', error);
         }
     };
-
-    
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -248,6 +437,7 @@ const UserProfilePage = () => {
                             className={isEditing ? "bg-brand-teal text-white" : "border-brand-blue text-brand-blue"}
                             variant={isEditing ? "solid" : "bordered"}
                             startContent={isEditing ? <Save className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+                            isDisabled={isProcessingResume}
                         >
                             {isEditing ? 'Save Changes' : 'Edit Profile'}
                         </Button>
@@ -257,11 +447,29 @@ const UserProfilePage = () => {
                                 variant="bordered"
                                 className="ml-2 border-gray-300 text-gray-600"
                                 startContent={<X className="h-4 w-4" />}
+                                isDisabled={isProcessingResume}
                             >
                                 Cancel
                             </Button>
                         )}
                     </div>
+
+                    {/* Processing Indicator */}
+                    {isProcessingResume && (
+                        <Card className="bg-blue-50 border-blue-200">
+                            <CardBody className="p-4">
+                                <div className="flex items-center gap-3">
+                                    <Loader2 className="h-5 w-5 animate-spin text-brand-blue" />
+                                    <div>
+                                        <p className="font-medium text-brand-blue">Processing Resume</p>
+                                        <p className="text-sm text-blue-600">
+                                            Extracting information and updating your profile...
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+                    )}
 
                     {/* Profile Completeness */}
                     <Card className="bg-white border-gray-200 shadow-sm">
@@ -276,8 +484,8 @@ const UserProfilePage = () => {
                                             {profileCompleteness()}%
                                         </span>
                                     </div>
-                                    <Progress 
-                                        value={profileCompleteness()} 
+                                    <Progress
+                                        value={profileCompleteness()}
                                         className="h-2"
                                         classNames={{
                                             indicator: "bg-brand-teal"
@@ -427,10 +635,21 @@ const UserProfilePage = () => {
                                                 variant="flat"
                                                 className="bg-[#F0F9FF] text-brand-teal"
                                             >
-                                                {skill}
-                                            </Chip> 
-                                        )) 
-                                        :
+                                                <span className='flex items-center'>
+                                                    {isEditing && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveSkill(index)}
+                                                            className="flex items-center mr-2 cursor-pointer text-red-500 hover:text-red-700 focus:outline-none"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    )}
+                                                    {skill}
+                                                </span>
+                                            </Chip>
+                                        ))
+                                            :
                                             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                                                 <Input
                                                     label="Currently Working At"
@@ -460,7 +679,7 @@ const UserProfilePage = () => {
                                                     <SelectItem key="education">Education</SelectItem>
                                                     <SelectItem key="retail">Retail</SelectItem>
                                                 </Select>
-                                            </div> 
+                                            </div>
                                         }
                                     </div>
                                     {isEditing && !isRecruiter && (
@@ -528,23 +747,36 @@ const UserProfilePage = () => {
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     <input
                                         type="file"
                                         accept=".pdf"
                                         onChange={handleResumeUpload}
                                         className="hidden"
                                         id="resume-upload"
+                                        disabled={isProcessingResume}
                                     />
                                     <label htmlFor="resume-upload">
                                         <Button
                                             as="span"
                                             className="w-full bg-brand-teal text-white"
-                                            startContent={<Upload className="h-4 w-4" />}
+                                            startContent={
+                                                isProcessingResume ?
+                                                    <Loader2 className="h-4 w-4 animate-spin" /> :
+                                                    <Upload className="h-4 w-4" />
+                                            }
+                                            isDisabled={isProcessingResume}
                                         >
-                                            {resumeUploaded ? 'Replace Resume' : 'Upload Resume'}
+                                            {isProcessingResume ? 'Processing...' :
+                                                resumeUploaded ? 'Replace Resume' : 'Upload Resume'}
                                         </Button>
                                     </label>
+
+                                    {isProcessingResume && (
+                                        <p className="text-xs text-center text-gray-600">
+                                            This may take a few moments while we extract your information
+                                        </p>
+                                    )}
                                 </CardBody>
                             </Card>
 

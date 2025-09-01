@@ -47,4 +47,4 @@ httpServer.listen(port, () => {
     console.log(`API and signaling server listening on http://localhost:${port}`);
 });
 
-scheduleLobbyCreation()
+// scheduleLobbyCreation()

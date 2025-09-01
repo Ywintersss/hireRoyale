@@ -6,10 +6,6 @@ import { __dirname } from '../lib/pathHelper.ts';
 import fs from 'fs';
 import path from 'path';
 
-interface AuthenticatedRequest extends Request {
-    file?: Express.Multer.File;
-}
-
 const prisma = new PrismaClient()
 
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response) => {
@@ -36,11 +32,11 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
     } catch (err) {
         console.error("Error:", err);
         res.status(401).json({ error: "Error Occured" });
-    } 
+    }
 }
 
 export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
-    try{
+    try {
         const session = await getSession(req)
 
         if (!session?.user) {
@@ -81,7 +77,7 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     } catch (err) {
         console.error("Error:", err);
         res.status(401).json({ error: "Error Occured" });
-    } 
+    }
 }
 
 export const uploadResume = async (req: AuthenticatedRequest, res: Response) => {
@@ -95,7 +91,7 @@ export const uploadResume = async (req: AuthenticatedRequest, res: Response) => 
         return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const resume  = req.file.filename
+    const resume = req.file.filename
 
     const newResume = await prisma.resume.create({
         data: {
@@ -112,7 +108,7 @@ export const uploadResume = async (req: AuthenticatedRequest, res: Response) => 
         data: {
             resumeId: newResume.id,
         },
-        include: { resume: true }, 
+        include: { resume: true },
     });
 
     return res.status(200).json({
@@ -158,7 +154,7 @@ export const updateResume = async (req: AuthenticatedRequest, res: Response) => 
 
     // Update DB
     const newResume = await prisma.resume.update({
-        data: { 
+        data: {
             resumeUrl: resume,
         },
         where: {

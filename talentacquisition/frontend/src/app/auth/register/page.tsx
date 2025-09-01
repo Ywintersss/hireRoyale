@@ -69,7 +69,7 @@ const RegisterPage = () => {
         } else if (formData.password !== formData.confirmPassword) {
             newErrors.confirmPassword = 'Passwords do not match';
         }
-        if (!formData.company.trim()) {
+        if (!formData.company.trim() && formData.role === 'recruiter') {
             newErrors.company = 'Company name is required';
         }
         if (!formData.agreeToTerms) {
@@ -94,6 +94,9 @@ const RegisterPage = () => {
                 email: formData.email,
                 password: formData.password,
                 name: `${formData.firstName} ${formData.lastName}`,
+                roleName: formData.role.charAt(0).toUpperCase() + formData.role.slice(1),
+                contact: formData.phone,
+                company: formData.company || null,
                 callbackURL: "/"
             });
 
@@ -101,7 +104,7 @@ const RegisterPage = () => {
                 setErrors({ general: error.message || 'Registration failed. Please try again.' });
             } else {
                 // Redirect to verification page or dashboard
-                router.push('/auth/verify-email');
+                router.push('/');
             }
         } catch (error) {
             setErrors({ general: 'An unexpected error occurred. Please try again.' });
@@ -224,7 +227,7 @@ const RegisterPage = () => {
 
             <div className="w-full max-w-lg relative z-10">
                 {/* Header */}
-                <motion.div 
+                <motion.div
                     className="text-center mb-8"
                     initial={{ opacity: 0, y: -30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -241,7 +244,7 @@ const RegisterPage = () => {
                         </div>
                         <span className="text-white text-lg font-semibold">HireRoyale</span>
                     </motion.div>
-                    
+
                     <motion.h1
                         className="text-white text-3xl sm:text-4xl font-bold mb-3"
                         initial={{ opacity: 0, y: 20 }}
@@ -250,7 +253,7 @@ const RegisterPage = () => {
                     >
                         Join the Revolution
                     </motion.h1>
-                    
+
                     <motion.p
                         className="text-white/80 text-lg sm:text-xl"
                         initial={{ opacity: 0, y: 20 }}
@@ -305,7 +308,7 @@ const RegisterPage = () => {
                                 </AnimatePresence>
 
                                 {/* Account Type Selection */}
-                                <motion.div 
+                                <motion.div
                                     className="flex flex-col gap-2"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -408,11 +411,15 @@ const RegisterPage = () => {
                                 </div>
 
                                 {/* Company */}
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 1.2, duration: 0.6 }}
-                                >
+
+                                {/* <motion.div */}
+                                {/*     initial={{ opacity: 0, x: -20 }} */}
+                                {/*     animate={{ opacity: 1, x: 0 }} */}
+                                {/*     transition={{ delay: 1.2, duration: 0.6 }} */}
+                                {/* > */}
+                                {
+                                    formData.role === "recruiter" &&
+
                                     <Input
                                         type="text"
                                         label="Company Name"
@@ -429,8 +436,9 @@ const RegisterPage = () => {
                                             errorMessage: 'text-red-600 text-sm'
                                         }}
                                     />
-                                </motion.div>
+                                }
 
+                                {/* </motion.div> */}
                                 {/* Email */}
                                 <motion.div
                                     initial={{ opacity: 0, x: -20 }}
@@ -523,7 +531,7 @@ const RegisterPage = () => {
                                                 </span>
                                             </div>
                                             <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                                <div 
+                                                <div
                                                     className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor(passwordStrength(formData.password)).replace('text-', 'bg-')}`}
                                                     style={{ width: `${(passwordStrength(formData.password) / 5) * 100}%` }}
                                                 />
@@ -570,7 +578,7 @@ const RegisterPage = () => {
                                 </motion.div>
 
                                 {/* Checkboxes */}
-                                <motion.div 
+                                <motion.div
                                     className="flex flex-col gap-3"
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -632,7 +640,7 @@ const RegisterPage = () => {
                                 </motion.div>
 
                                 {/* Divider with OR */}
-                                <motion.div 
+                                <motion.div
                                     className="relative flex items-center justify-center my-6"
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -711,7 +719,7 @@ const RegisterPage = () => {
                             {/* Footer */}
                             <Divider className="my-6" />
 
-                            <motion.div 
+                            <motion.div
                                 className="text-center"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -730,7 +738,7 @@ const RegisterPage = () => {
                             </motion.div>
 
                             {/* Features */}
-                            <motion.div 
+                            <motion.div
                                 className="flex flex-wrap gap-2 justify-center mt-6"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}

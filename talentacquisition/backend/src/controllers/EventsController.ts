@@ -2,6 +2,7 @@ import { PrismaClient } from '../../app/generated/prisma/index.js';
 import type { Request, Response } from 'express'
 import { auth } from '../lib/auth.ts';
 import { fromNodeHeaders } from 'better-auth/node';
+import { scheduleLobbyCreation } from '../timed/timedLobbyCreation.ts';
 
 const prisma = new PrismaClient()
 
@@ -146,6 +147,41 @@ export const joinEvent = async (req: Request, res: Response) => {
                 eventId: formData.eventId
             }
         })
+
+        const recruiterCount = await prisma.userEvent.count({
+            where: {
+                user: {
+                    role: {
+                        name: 'Recruiter'
+                    }
+                },
+                eventId: formData.eventId
+            }
+        })
+
+        const totalUserInEvent = await prisma.userEvent.count({
+            where: {
+                eventId: formData.eventId
+            }
+        })
+
+        console.log(recruiterCount)
+
+        if (recruiterCount == 5) {
+            await prisma.event.update({
+                where: {
+                    id: formData.eventId
+                },
+                data: {
+                    status: 'Approved'
+                }
+            })
+        }
+
+        if (totalUserInEvent >= 10) {
+            scheduleLobbyCreation(formData.eventId, `Event on ${new Date().toDateString()}`)
+
+        }
 
         return res.status(201).json({ status: 'Success' })
     } catch (error) {

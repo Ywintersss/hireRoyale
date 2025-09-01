@@ -51,7 +51,7 @@ export interface ResumeAnalysis {
 export class AIService {
     private static instance: AIService;
 
-    private constructor() {}
+    private constructor() { }
 
     public static getInstance(): AIService {
         if (!AIService.instance) {
@@ -185,10 +185,10 @@ export class AIService {
 
     private extractSkillsFromEvent(event: Event): string[] {
         const skills: string[] = [];
-        
+
         if (event.requirements) {
             const requirementText = event.requirements.toLowerCase();
-            
+
             // Common tech skills
             const techSkills = ['javascript', 'python', 'react', 'node.js', 'typescript', 'aws', 'docker', 'kubernetes', 'sql', 'mongodb'];
             techSkills.forEach(skill => {
@@ -211,7 +211,7 @@ export class AIService {
 
     private analyzeParticipantSkills(participants: User[]): string[] {
         const allSkills: string[] = [];
-        
+
         participants.forEach(participant => {
             if (participant.skills) {
                 allSkills.push(...participant.skills);
@@ -223,9 +223,9 @@ export class AIService {
 
     private calculateSkillMatch(eventSkills: string[], participantSkills: string[]): number {
         if (eventSkills.length === 0) return 85; // Default high match if no specific skills required
-        
-        const matchedSkills = eventSkills.filter(skill => 
-            participantSkills.some(participantSkill => 
+
+        const matchedSkills = eventSkills.filter(skill =>
+            participantSkills.some(participantSkill =>
                 participantSkill.toLowerCase().includes(skill.toLowerCase())
             )
         );
@@ -238,13 +238,13 @@ export class AIService {
         const baseScore = 75;
         const industryBonus = event.industry === 'technology' ? 10 : 5;
         const experienceBonus = participants.length > 5 ? 5 : 0;
-        
+
         return Math.min(100, baseScore + industryBonus + experienceBonus + Math.floor(Math.random() * 15));
     }
 
     private calculateMarketDemand(skills: string[], marketData: any): number {
         if (skills.length === 0) return 80;
-        
+
         const demandScores = skills.map(skill => {
             const marketSkill = marketData.skills?.find((s: any) => s.name.toLowerCase().includes(skill.toLowerCase()));
             return marketSkill?.demand || 70;
@@ -267,7 +267,7 @@ export class AIService {
         const skillBonus = skills.length * 5000;
         const marketBonus = marketData.averageSalary || 10000;
         const totalSalary = baseSalary + skillBonus + marketBonus;
-        
+
         return `$${totalSalary.toLocaleString()}-${(totalSalary + 20000).toLocaleString()}`;
     }
 
@@ -276,8 +276,8 @@ export class AIService {
     }
 
     private getMissingSkills(eventSkills: string[], participantSkills: string[]): string[] {
-        return eventSkills.filter(skill => 
-            !participantSkills.some(participantSkill => 
+        return eventSkills.filter(skill =>
+            !participantSkills.some(participantSkill =>
                 participantSkill.toLowerCase().includes(skill.toLowerCase())
             )
         ).slice(0, 3);

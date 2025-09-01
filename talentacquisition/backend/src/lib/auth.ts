@@ -27,10 +27,10 @@ export const auth = betterAuth({
                 type: 'string',
                 input: true
             },
-            password: {
+            company: {
                 type: 'string',
                 input: true
-            }
+            },
         },
     },
     database: prismaAdapter(prisma, {

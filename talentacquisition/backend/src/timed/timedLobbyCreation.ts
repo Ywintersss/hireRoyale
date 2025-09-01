@@ -1,4 +1,4 @@
-export function scheduleLobbyCreation() {
+export function scheduleLobbyCreation(eventId: string, lobbyName: string) {
     const now = new Date();
     const targetTime = new Date(now.getTime() + 20 * 1000); // 20 seconds later
 
@@ -11,7 +11,7 @@ export function scheduleLobbyCreation() {
             const response = await fetch("http://localhost:8000/events/create-lobby", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ eventId: "cmezokbrt0003tqqs12j8zp0o", lobbyName: "Test Lobby" }),
+                body: JSON.stringify({ eventId: eventId, lobbyName: lobbyName }),
             });
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
