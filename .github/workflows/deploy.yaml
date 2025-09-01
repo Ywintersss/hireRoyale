@@ -6,21 +6,7 @@ on:
       - main
 
 jobs:
-  generate-prisma-client:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Node dependencies and generate Prisma client
-        # working-directory: talentacquisition/backend
-        run: |
-          cd talentacquisition/backend
-          npm install
-          npx prisma generate
   docker-build-and-push:
-    needs: generate-prisma-client
     runs-on: ubuntu-latest
 
     env:
@@ -75,6 +61,12 @@ jobs:
           username: ${{ env.EC2_USER }}
           key: ${{ env.EC2_KEY }}
           script: |
+            CONTAINER_NAME="hireroyalebackend"
+            IMAGE_NAME="hireroyalebackend"
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            HOST_PORT=7000
+            CONTAINER_PORT=8000
+
             echo "Stopping old container (if exists)..."
             docker stop $CONTAINER_NAME || true
             echo "Removing old container (if exists)..."
