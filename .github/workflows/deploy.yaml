@@ -12,9 +12,10 @@ jobs:
     steps:
       - name: Debug repo structure
         run: |
+          echo "Current directory:"
           pwd
-          ls -R
-
+          echo "List files recursively:"
+          ls -laR
 
       - name: Install Node dependencies and generate Prisma client
         # working-directory: talentacquisition/backend
