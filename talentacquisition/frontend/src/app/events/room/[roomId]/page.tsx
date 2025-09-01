@@ -27,7 +27,6 @@ import VideoTile from '@/components/VideoTile'
 import { socket } from '@/lib/socket'
 import { authClient } from '@/lib/auth-client'
 import { useQuery } from '@tanstack/react-query'
-import { Participant } from '../../../../../types/types'
 
 
 export default function VideoRoomPage() {
@@ -90,6 +89,30 @@ export default function VideoRoomPage() {
         let durationInterval: NodeJS.Timeout
         let initialized = false
 
+        try {
+            // Try to get user media, but don’t block room join if it fails
+            navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            }).then((data) => {
+                setLocalStream(data)
+                if (localVideoRef.current) {
+                    localVideoRef.current.srcObject = data
+                }
+            })
+
+            // Get available devices only if permissions granted
+            navigator.mediaDevices.enumerateDevices().then((devices) => {
+                setAvailableDevices({
+                    video: devices.filter(device => device.kind === 'videoinput'),
+                    audio: devices.filter(device => device.kind === 'audioinput')
+                })
+
+            })
+        } catch (err) {
+            console.warn('No camera/mic access. Joining room without media.', err)
+        }
+
         const initializeRoom = async () => {
             if (initialized) return
             initialized = true
@@ -97,25 +120,9 @@ export default function VideoRoomPage() {
                 console.log('Initializing room:', roomId)
                 console.log('Session:', session)
 
-                // Get user media
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
-                })
-                setLocalStream(stream)
-                if (localVideoRef.current) {
-                    localVideoRef.current.srcObject = stream
-                }
+                let stream: MediaStream | null = null
 
-                // Get available devices
-                const devices = await navigator.mediaDevices.enumerateDevices()
-                setAvailableDevices({
-                    video: devices.filter(device => device.kind === 'videoinput'),
-                    audio: devices.filter(device => device.kind === 'audioinput')
-                })
-
-                console.log('About to emit join-room...')
-                // Join room
+                // ✅ Always join the room, with or without media
                 socket.emit('join-room', roomId, {
                     name: session?.user?.name || 'Unknown User',
                     role: session?.user?.role?.name || 'Unknown Role',
@@ -139,7 +146,7 @@ export default function VideoRoomPage() {
                     clearInterval(qualityInterval)
                 }
             } catch (error) {
-                console.error('Error accessing media devices:', error)
+                console.error('Error initializing room:', error)
             }
         }
 
@@ -159,7 +166,6 @@ export default function VideoRoomPage() {
             console.log('Existing peers:', peers)
 
             // Update participant count
-            setRoomStats(prev => ({ ...prev, participants: peers.length + 1 }))
 
             // Create connections for existing peers (I'm the new joiner)
             for (const peerId of peers) {
@@ -183,17 +189,35 @@ export default function VideoRoomPage() {
             }
         }
 
-        const handlePeerJoined = (data: { socketId: string, metadata: any }) => {
+        const handlePeerJoined = async (data: { socketId: string, metadata: any }) => {
             console.log('Peer joined:', data.socketId, data.metadata)
 
-            // Add to remote streams list
+            // Add to remote streams list if not already there
             setRemoteStreams(prev => {
                 if (prev.find(p => p.id === data.socketId)) return prev
                 return [...prev, { id: data.socketId, metadata: data.metadata }]
             })
 
             // Update participant count
-            setRoomStats(prev => ({ ...prev, participants: prev.participants + 1 }))
+
+            // ✅ Create connection toward the new peer
+            if (!peerConnections.current.has(data.socketId)) {
+                console.log('Creating connection for newly joined peer:', data.socketId)
+                const peerConnection = createPeerConnection(data.socketId)
+
+                // Attach our local tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => {
+                        peerConnection.addTrack(track, localStream)
+                    })
+                }
+
+                // Create and send offer
+                const offer = await peerConnection.createOffer()
+                await peerConnection.setLocalDescription(offer)
+                socket.emit('offer', { to: data.socketId, sdp: offer })
+                console.log('Sent offer to new peer:', data.socketId)
+            }
         }
 
         const handlePeerLeft = (data: { socketId: string }) => {
@@ -259,6 +283,31 @@ export default function VideoRoomPage() {
             socket.off('ice-candidate', handleIceCandidate)
         }
     }, [socket, localStream])
+
+    useEffect(() => {
+        if (!localStream) return
+
+        peerConnections.current.forEach((pc) => {
+            const senders = pc.getSenders()
+
+            localStream.getTracks().forEach(track => {
+                // Replace track if already present
+                const sender = senders.find(s => s.track?.kind === track.kind)
+                if (sender) {
+                    sender.replaceTrack(track)
+                } else {
+                    pc.addTrack(track, localStream)
+                }
+            })
+        })
+    }, [localStream])
+
+    useEffect(() => {
+        setRoomStats(prev => ({
+            ...prev,
+            participants: remoteStreams.length + 1 // 1 for me
+        }))
+    }, [remoteStreams])
 
     const createPeerConnection = (peerId: string) => {
         if (peerConnections.current.has(peerId)) {
@@ -580,7 +629,9 @@ export default function VideoRoomPage() {
                             <Card key={participant.id} className="bg-white/95 backdrop-blur shadow-xl border-0 overflow-hidden">
                                 <CardBody className="p-0">
                                     <div className="relative">
-                                        <VideoTile stream={participant.stream} />
+                                        <VideoTile key={participant.id}
+                                            stream={participant.stream}
+                                            metadata={participant.metadata} />
                                         <div className="absolute top-3 left-3">
                                             <Chip className="bg-black/50 text-white text-xs">
                                                 {participant.metadata?.name || 'Participant'}
