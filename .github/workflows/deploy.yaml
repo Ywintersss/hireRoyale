@@ -12,13 +12,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
-      - name: Debug repo structure
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "List files recursively:"
-          ls -laR
 
       - name: Install Node dependencies and generate Prisma client
         # working-directory: talentacquisition/backend
@@ -53,7 +46,7 @@ jobs:
       - name: Build and push Docker image
         working-directory: talentacquisition/backend
         run: |
-          docker build -t $IMAGE_NAME:latest -f dockerfile talentacquisition/backend
+          docker build -t $IMAGE_NAME:latest -f dockerfile .
           docker tag $IMAGE_NAME:latest $DOCKER_USERNAME/$IMAGE_NAME:latest
           docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
 
